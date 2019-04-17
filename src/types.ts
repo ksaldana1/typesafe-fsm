@@ -13,7 +13,6 @@ export interface StateNode<
   transitions: Array<Transition<TEvents, TAllStates>>;
   states?: StateProtocol<TEvents, any>;
 }
-
 export interface Transition<TEvents extends EventObject, TAllStates extends string> {
   to: TAllStates;
   event: TEvents;
@@ -42,14 +41,20 @@ export interface TransitionConfig<
   TNode extends keyof TProtocol['states']
 > {
   on: {
-    [E in EventUnionFromStateProtocol<TProtocol, TNode>['type']]: AssignFunction<
-      ContextMapFromStateProtocol<TProtocol>[TNode],
-      Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: E }>,
-      ContextMapFromStateProtocol<TProtocol>[Extract<
+    [E in EventUnionFromStateProtocol<TProtocol, TNode>['type']]: {
+      action: AssignFunction<
+        ContextMapFromStateProtocol<TProtocol>[TNode],
+        Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: E }>,
+        ContextMapFromStateProtocol<TProtocol>[Extract<
+          TransitionUnionFromStateProtocol<TProtocol, TNode>,
+          { event: { type: E } }
+        >['to']]
+      >;
+      target: Extract<
         TransitionUnionFromStateProtocol<TProtocol, TNode>,
         { event: { type: E } }
-      >['to']]
-    >
+      >['to'];
+    }
   };
   states?: TProtocol['states'][TNode]['states'] extends StateProtocol<any, any>
     ? TransitionConfigMap<TProtocol['states'][TNode]['states']>

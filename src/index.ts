@@ -72,15 +72,21 @@ const config: ProtocolConfig<LightProtocol, LightStates.RED> = {
   states: {
     GREEN: {
       on: {
-        TIMER: (_ctx, _event) => {
-          return { value: 'YELLOW' };
+        TIMER: {
+          target: LightStates.YELLOW,
+          action: (_ctx, _event) => {
+            return { value: 'YELLOW' };
+          },
         },
       },
     },
     RED: {
       on: {
-        TIMER: (_ctx, _event) => {
-          return { value: 'GREEN' };
+        TIMER: {
+          target: LightStates.GREEN,
+          action: (_ctx, _event) => {
+            return { value: 'GREEN' };
+          },
         },
       },
       states: {
@@ -89,15 +95,21 @@ const config: ProtocolConfig<LightProtocol, LightStates.RED> = {
         },
         WAIT: {
           on: {
-            PED_TIMER: (_ctx, _event) => {
-              return { value: 'RED.STOP' };
+            PED_TIMER: {
+              target: PedestrianStates.STOP,
+              action: (_ctx, _event) => {
+                return { value: 'RED.STOP' };
+              },
             },
           },
         },
         WALK: {
           on: {
-            PED_TIMER: (_ctx, _event) => {
-              return { value: 'RED.WAIT' };
+            PED_TIMER: {
+              target: PedestrianStates.WAIT,
+              action: (_ctx, _event) => {
+                return { value: 'RED.WAIT' };
+              },
             },
           },
         },
@@ -105,8 +117,11 @@ const config: ProtocolConfig<LightProtocol, LightStates.RED> = {
     },
     YELLOW: {
       on: {
-        TIMER: (_ctx, _event) => {
-          return { value: 'RED.WALK' };
+        TIMER: {
+          target: LightStates.RED,
+          action: (_ctx, _event) => {
+            return { value: 'RED.WALK' };
+          },
         },
       },
     },

@@ -1,4 +1,4 @@
-import { matchFactory, SchemaConfig } from './types';
+import { matchFactory, ProtocolConfig } from './types';
 
 // Pedestrian Protocol
 enum PedestrianStates {
@@ -66,7 +66,7 @@ interface LightProtocol {
 }
 
 // Light Configuration
-const config: SchemaConfig<LightProtocol, LightStates.RED> = {
+const config: ProtocolConfig<LightProtocol, LightStates.RED> = {
   initial: LightStates.RED,
   context: { value: 'RED.WALK' },
   states: {

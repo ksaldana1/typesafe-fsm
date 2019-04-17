@@ -78,14 +78,10 @@ interface Schema {
   states?: Record<string, Schema>;
 }
 
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((
-  k: infer I
-) => void)
-  ? I
-  : never;
-
-//  use Lookup<T, K> instead of T[K] in cases where the compiler
-//  cannot verify that K is a key of T
+/* 
+  use Lookup<T, K> instead of T[K] in cases where the compiler
+  cannot verify that K is a key of T
+*/
 export type Lookup<T, K> = K extends keyof T ? T[K] : never;
 
 // type-safe match factory

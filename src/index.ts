@@ -1,4 +1,4 @@
-import { Lookup, SchemaConfig, StateProtocol, matchFactory } from './types';
+import { matchFactory, SchemaConfig } from './types';
 
 // Pedestrian Protocol
 enum PedestrianStates {

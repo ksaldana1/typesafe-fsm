@@ -38,17 +38,21 @@ type TransitionUnionFromStateProtocol<
 
 export interface TransitionConfig<
   TProtocol extends StateProtocol<any, any>,
-  TNode extends keyof TProtocol['states']
+  TNode extends keyof TProtocol['states'],
+  TActions extends string
 > {
   on: {
     [E in EventUnionFromStateProtocol<TProtocol, TNode>['type']]: {
-      action: AssignFunction<
-        ContextMapFromStateProtocol<TProtocol>[TNode],
-        Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: E }>,
-        ContextMapFromStateProtocol<TProtocol>[Extract<
-          TransitionUnionFromStateProtocol<TProtocol, TNode>,
-          { event: { type: E } }
-        >['to']]
+      actions: Array<
+        | AssignFunction<
+            ContextMapFromStateProtocol<TProtocol>[TNode],
+            Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: E }>,
+            ContextMapFromStateProtocol<TProtocol>[Extract<
+              TransitionUnionFromStateProtocol<TProtocol, TNode>,
+              { event: { type: E } }
+            >['to']]
+          >
+        | TActions
       >;
       target: Extract<
         TransitionUnionFromStateProtocol<TProtocol, TNode>,
@@ -57,13 +61,14 @@ export interface TransitionConfig<
     }
   };
   states?: TProtocol['states'][TNode]['states'] extends StateProtocol<any, any>
-    ? TransitionConfigMap<TProtocol['states'][TNode]['states']>
+    ? TransitionConfigMap<TProtocol['states'][TNode]['states'], TActions>
     : never;
 }
 
-export type TransitionConfigMap<T extends StateProtocol<any, any>> = {
-  [K in keyof T['states']]: TransitionConfig<T, K>
-};
+export type TransitionConfigMap<
+  T extends StateProtocol<any, any>,
+  TActions extends string
+> = { [K in keyof T['states']]: TransitionConfig<T, K, TActions> };
 
 export type AssignFunction<TContext, TEvent extends EventObject, TReturnContext> = (
   ctx: TContext,
@@ -72,12 +77,26 @@ export type AssignFunction<TContext, TEvent extends EventObject, TReturnContext>
 
 export interface ProtocolConfig<
   T extends StateProtocol<any, any>,
-  K extends keyof T['states']
+  K extends keyof T['states'],
+  TActions extends string
 > {
   initial: K;
   context?: ContextMapFromStateProtocol<T>[K];
-  states: TransitionConfigMap<T>;
+  states: TransitionConfigMap<T, TActions>;
 }
+
+export type ActionImplementations<T> = T extends ProtocolConfig<
+  infer Protocol,
+  any,
+  infer Actions
+>
+  ? {
+      [K in Actions]: (
+        ctx: ContextUnionFromStateProtocol<Protocol>,
+        event: EventUnionFromStateProtocol<Protocol, keyof Protocol['states']>
+      ) => void
+    }
+  : never;
 
 /* 
   use Lookup<T, K> instead of T[K] in cases where the compiler

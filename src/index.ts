@@ -1,4 +1,4 @@
-import { matchFactory, ProtocolConfig } from './types';
+import { matchFactory, ProtocolConfig, ActionImplementations } from './types';
 
 // Pedestrian Protocol
 enum PedestrianStates {
@@ -66,7 +66,7 @@ interface LightProtocol {
 }
 
 // Light Configuration
-const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED> = {
+const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, 'hello'> = {
   initial: LightStates.RED,
   context: { value: 'RED.WALK' },
   states: {
@@ -74,9 +74,12 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED> = {
       on: {
         TIMER: {
           target: LightStates.YELLOW,
-          action: (_ctx, _event) => {
-            return { value: 'YELLOW' };
-          },
+          actions: [
+            (_ctx, _event) => {
+              return { value: 'YELLOW' };
+            },
+            'hello',
+          ],
         },
       },
     },
@@ -84,9 +87,11 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED> = {
       on: {
         TIMER: {
           target: LightStates.GREEN,
-          action: (_ctx, _event) => {
-            return { value: 'GREEN' };
-          },
+          actions: [
+            (_ctx, _event) => {
+              return { value: 'GREEN' };
+            },
+          ],
         },
       },
       states: {
@@ -97,9 +102,11 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED> = {
           on: {
             PED_TIMER: {
               target: PedestrianStates.STOP,
-              action: (_ctx, _event) => {
-                return { value: 'RED.STOP' };
-              },
+              actions: [
+                (_ctx, _event) => {
+                  return { value: 'RED.STOP' };
+                },
+              ],
             },
           },
         },
@@ -107,9 +114,11 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED> = {
           on: {
             PED_TIMER: {
               target: PedestrianStates.WAIT,
-              action: (_ctx, _event) => {
-                return { value: 'RED.WAIT' };
-              },
+              actions: [
+                (_ctx, _event) => {
+                  return { value: 'RED.WAIT' };
+                },
+              ],
             },
           },
         },
@@ -119,9 +128,11 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED> = {
       on: {
         TIMER: {
           target: LightStates.RED,
-          action: (_ctx, _event) => {
-            return { value: 'RED.WALK' };
-          },
+          actions: [
+            (_ctx, _event) => {
+              return { value: 'RED.WALK' };
+            },
+          ],
         },
       },
     },
@@ -212,7 +223,11 @@ interface AuthProtocol {
 
 const authMatch = matchFactory<AuthProtocol>();
 
-const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT> = {
+enum EffectActions {
+  TELEMETRY = 'TELEMETRY',
+}
+
+const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT, EffectActions> = {
   initial: AuthStates.LOGGED_OUT,
   context: {
     error: null,
@@ -223,9 +238,11 @@ const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT> = {
       on: {
         LOGIN: {
           target: AuthStates.LOADING,
-          action: (_ctx, _event) => {
-            return { error: null, user: null };
-          },
+          actions: [
+            (_ctx, _event) => {
+              return { error: null, user: null };
+            },
+          ],
         },
       },
     },
@@ -233,15 +250,20 @@ const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT> = {
       on: {
         LOGIN_ERRROR: {
           target: AuthStates.ERROR,
-          action: (_ctx, event) => {
-            return { error: event.payload.error, user: null };
-          },
+          actions: [
+            (_ctx, event) => {
+              return { error: event.payload.error, user: null };
+            },
+            EffectActions.TELEMETRY,
+          ],
         },
         LOGIN_SUCCESS: {
           target: AuthStates.LOGGED_IN,
-          action: (_ctx, event) => {
-            return { error: null, user: event.payload.user };
-          },
+          actions: [
+            (_ctx, event) => {
+              return { error: null, user: event.payload.user };
+            },
+          ],
         },
       },
     },
@@ -249,9 +271,11 @@ const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT> = {
       on: {
         LOGIN: {
           target: AuthStates.LOADING,
-          action: (_ctx, event) => {
-            return { error: null, user: null };
-          },
+          actions: [
+            (_ctx, event) => {
+              return { error: null, user: null };
+            },
+          ],
         },
       },
     },
@@ -259,11 +283,19 @@ const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT> = {
       on: {
         LOGOUT: {
           target: AuthStates.LOGGED_OUT,
-          action: (_ctx, _event) => {
-            return { error: null, user: null };
-          },
+          actions: [
+            (_ctx, _event) => {
+              return { error: null, user: null };
+            },
+          ],
         },
       },
     },
+  },
+};
+
+const actionImpls: ActionImplementations<typeof authConfig> = {
+  TELEMETRY: (ctx, event) => {
+    console.log('telemetry');
   },
 };

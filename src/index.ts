@@ -122,3 +122,76 @@ const valid3 = match(LightStates.RED, PedestrianStates.WALK);
 const invalid1 = match('invalid');
 const invalid2 = match(LightStates.YELLOW, PedestrianStates.WAIT);
 const invalid3 = match(LightStates.RED, PedestrianStates.WAIT, PedestrianStates.WALK);
+
+enum AuthStates {
+  LOGGED_IN = 'LOGGED_IN',
+  LOADING = 'LOADING',
+  ERROR = 'ERROR',
+  LOGGED_OUT = 'LOGGED_OUT',
+}
+
+enum AuthEventTypes {
+  LOGIN = 'LOGIN',
+  LOGOUT = 'LOGOUT',
+
+  // internal events
+  LOGIN_SUCCESS = 'LOGIN_SUCCESS',
+  LOGIN_ERROR = 'LOGIN_ERRROR',
+}
+
+interface LoginEvent {
+  type: AuthEventTypes.LOGIN;
+  payload: {
+    username: string;
+    password: string;
+  };
+}
+
+interface LogoutEvent {
+  type: AuthEventTypes.LOGOUT;
+}
+
+interface LoginSuccessEvent {
+  type: AuthEventTypes.LOGIN_SUCCESS;
+  payload: {
+    user: {
+      username: string;
+    };
+  };
+}
+
+interface LoginErrorEvent {
+  type: AuthEventTypes.LOGIN_ERROR;
+  payload: {
+    error: string;
+  };
+}
+
+interface AuthProtocol {
+  states: {
+    [AuthStates.LOGGED_OUT]: {
+      context: { user: null; error: null };
+      transitions: [{ to: AuthStates.LOADING; event: LoginEvent }];
+    };
+    [AuthStates.LOGGED_IN]: {
+      context: { user: { username: string }; error: null };
+      transitions: [{ to: AuthStates.LOGGED_OUT; event: LogoutEvent }];
+    };
+    [AuthStates.LOADING]: {
+      context: { user: null; error: null };
+      transitions: [
+        { to: AuthStates.LOGGED_IN; event: LoginSuccessEvent },
+        { to: AuthStates.ERROR; event: LoginErrorEvent }
+      ];
+    };
+    [AuthStates.ERROR]: {
+      context: { user: null; error: string };
+      transitions: [{ to: AuthStates.LOADING; event: LoginEvent }];
+    };
+  };
+}
+
+const match2 = matchFactory<AuthProtocol>();
+
+const matched = match2(AuthStates.LOGGED_IN); // with this type guard context is { user: { username: string }; error: null };
+const matched2 = match2(AuthStates.ERROR); // with this type guard context is { user: null; error: string };

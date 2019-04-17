@@ -1,5 +1,6 @@
 import { Lookup, SchemaConfig, StateSchema } from './types';
 
+// Pedestrian Protocol
 enum PedestrianStates {
   WALK = 'WALK',
   WAIT = 'WAIT',
@@ -31,6 +32,7 @@ interface PedestrianProtocol {
   };
 }
 
+// Light Protocol
 enum LightStates {
   GREEN = 'GREEN',
   YELLOW = 'YELLOW',
@@ -63,6 +65,7 @@ interface LightProtocol {
   };
 }
 
+// Light Configuration
 const config: SchemaConfig<LightProtocol, LightStates.RED> = {
   initial: LightStates.RED,
   context: { value: 'RED.WALK' },
@@ -110,6 +113,7 @@ const config: SchemaConfig<LightProtocol, LightStates.RED> = {
   },
 };
 
+// type-safe match factory
 function matchFactory<T extends StateSchema<any, any>>() {
   function match<K extends keyof T['states']>(k: K): boolean;
   function match<
@@ -139,4 +143,10 @@ function matchFactory<T extends StateSchema<any, any>>() {
 
 const match = matchFactory<LightProtocol>();
 
-match(LightStates.GREEN);
+const valid1 = match(LightStates.GREEN);
+const valid2 = match(LightStates.RED);
+const valid3 = match(LightStates.RED, PedestrianStates.WALK);
+
+const invalid1 = match('invalid');
+const invalid2 = match(LightStates.YELLOW, PedestrianStates.WAIT);
+const invalid3 = match(LightStates.RED, PedestrianStates.WAIT, PedestrianStates.WALK);

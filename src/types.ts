@@ -1,6 +1,6 @@
 import { EventObject } from 'xstate';
 
-export interface StateSchema<TEvents extends EventObject, TAllStates extends string> {
+export interface StateProtocol<TEvents extends EventObject, TAllStates extends string> {
   states: { [K in TAllStates]: StateNode<TEvents, TAllStates> };
 }
 
@@ -11,7 +11,7 @@ export interface StateNode<
 > {
   context: TContext;
   transitions: Array<Transition<TEvents, TAllStates>>;
-  states?: StateSchema<TEvents, any>;
+  states?: StateProtocol<TEvents, any>;
 }
 
 export interface Transition<TEvents extends EventObject, TAllStates extends string> {
@@ -19,26 +19,26 @@ export interface Transition<TEvents extends EventObject, TAllStates extends stri
   event: TEvents;
 }
 // I'm sorry Anders... this isn't your fault
-export type ContextMapFromStateSchema<TStateSchema extends StateSchema<any, any>> = {
+export type ContextMapFromStateSchema<TStateSchema extends StateProtocol<any, any>> = {
   [K in keyof TStateSchema['states']]: TStateSchema['states'][K]['context']
 };
 
 export type ContextUnionFromStateSchema<
-  TStateSchema extends StateSchema<any, any>
+  TStateSchema extends StateProtocol<any, any>
 > = TStateSchema['states'][keyof TStateSchema['states']]['context'];
 
 type EventUnionFromStateSchema<
-  T extends StateSchema<any, any>,
+  T extends StateProtocol<any, any>,
   K extends keyof T['states']
 > = T['states'][K]['transitions'][number]['event'];
 
 type TransitionUnionFromStateSchema<
-  T extends StateSchema<any, any>,
+  T extends StateProtocol<any, any>,
   K extends keyof T['states']
 > = T['states'][K]['transitions'][number];
 
 export interface TransitionConfig<
-  TSchema extends StateSchema<any, any>,
+  TSchema extends StateProtocol<any, any>,
   TNode extends keyof TSchema['states']
 > {
   on: {
@@ -51,12 +51,12 @@ export interface TransitionConfig<
       >['to']]
     >
   };
-  states?: TSchema['states'][TNode]['states'] extends StateSchema<any, any>
+  states?: TSchema['states'][TNode]['states'] extends StateProtocol<any, any>
     ? TransitionConfigMap<TSchema['states'][TNode]['states']>
     : never;
 }
 
-export type TransitionConfigMap<T extends StateSchema<any, any>> = {
+export type TransitionConfigMap<T extends StateProtocol<any, any>> = {
   [K in keyof T['states']]: TransitionConfig<T, K>
 };
 
@@ -66,7 +66,7 @@ export type AssignFunction<TContext, TEvent extends EventObject, TReturnContext>
 ) => TReturnContext;
 
 export interface SchemaConfig<
-  T extends StateSchema<any, any>,
+  T extends StateProtocol<any, any>,
   K extends keyof T['states']
 > {
   initial: K;
@@ -107,14 +107,3 @@ interface LightProtocol {
     RED: PedestrianProtocol;
   };
 }
-
-const valid1 = match('RED', 'STOP');
-const valid2 = match('RED', 'STOP', 'REALLY_STOP');
-const valid3 = match('GREEN');
-const valid4 = match('YELLOW');
-const valid5 = match('RED');
-
-const invalid1 = match('RED', 'ST');
-const invalid2 = match('GREEN', 'STOP');
-const invalid3 = match('RE');
-const invalid4 = match('');

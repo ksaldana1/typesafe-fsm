@@ -19,40 +19,40 @@ export interface Transition<TEvents extends EventObject, TAllStates extends stri
   event: TEvents;
 }
 // I'm sorry Anders... this isn't your fault
-export type ContextMapFromStateSchema<TStateSchema extends StateProtocol<any, any>> = {
+export type ContextMapFromStateProtocol<TStateSchema extends StateProtocol<any, any>> = {
   [K in keyof TStateSchema['states']]: TStateSchema['states'][K]['context']
 };
 
-export type ContextUnionFromStateSchema<
+export type ContextUnionFromStateProtocol<
   TStateSchema extends StateProtocol<any, any>
 > = TStateSchema['states'][keyof TStateSchema['states']]['context'];
 
-type EventUnionFromStateSchema<
+type EventUnionFromStateProtocol<
   T extends StateProtocol<any, any>,
   K extends keyof T['states']
 > = T['states'][K]['transitions'][number]['event'];
 
-type TransitionUnionFromStateSchema<
+type TransitionUnionFromStateProtocol<
   T extends StateProtocol<any, any>,
   K extends keyof T['states']
 > = T['states'][K]['transitions'][number];
 
 export interface TransitionConfig<
-  TSchema extends StateProtocol<any, any>,
-  TNode extends keyof TSchema['states']
+  TProtocol extends StateProtocol<any, any>,
+  TNode extends keyof TProtocol['states']
 > {
   on: {
-    [E in EventUnionFromStateSchema<TSchema, TNode>['type']]: AssignFunction<
-      ContextMapFromStateSchema<TSchema>[TNode],
-      Extract<EventUnionFromStateSchema<TSchema, TNode>, { type: E }>,
-      ContextMapFromStateSchema<TSchema>[Extract<
-        TransitionUnionFromStateSchema<TSchema, TNode>,
+    [E in EventUnionFromStateProtocol<TProtocol, TNode>['type']]: AssignFunction<
+      ContextMapFromStateProtocol<TProtocol>[TNode],
+      Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: E }>,
+      ContextMapFromStateProtocol<TProtocol>[Extract<
+        TransitionUnionFromStateProtocol<TProtocol, TNode>,
         { event: { type: E } }
       >['to']]
     >
   };
-  states?: TSchema['states'][TNode]['states'] extends StateProtocol<any, any>
-    ? TransitionConfigMap<TSchema['states'][TNode]['states']>
+  states?: TProtocol['states'][TNode]['states'] extends StateProtocol<any, any>
+    ? TransitionConfigMap<TProtocol['states'][TNode]['states']>
     : never;
 }
 
@@ -65,17 +65,13 @@ export type AssignFunction<TContext, TEvent extends EventObject, TReturnContext>
   event: TEvent
 ) => TReturnContext;
 
-export interface SchemaConfig<
+export interface ProtocolConfig<
   T extends StateProtocol<any, any>,
   K extends keyof T['states']
 > {
   initial: K;
-  context?: ContextMapFromStateSchema<T>[K];
+  context?: ContextMapFromStateProtocol<T>[K];
   states: TransitionConfigMap<T>;
-}
-
-interface Schema {
-  states?: Record<string, Schema>;
 }
 
 /* 

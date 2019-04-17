@@ -81,8 +81,14 @@ interface TestInterface {
     RED: {
       states: {
         WALK: {};
-        WAIT: {};
-        STOP: {};
+        WAIT: {
+          WAIN: {
+            WARD: {};
+          };
+        };
+        STOP: {
+          WAX: {};
+        };
       };
     };
   };
@@ -101,11 +107,23 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
 //  use Lookup<T, K> instead of T[K] in cases where the compiler
 //  cannot verify that K is a key of T
 type Lookup<T, K> = K extends keyof T ? T[K] : never;
+type B = TestInterface['states'];
 
 declare function match<K extends keyof TestInterface['states']>(arg: [K]): boolean;
 declare function match<
   K extends keyof TestInterface['states'],
   K1 extends keyof Lookup<TestInterface['states'][K], 'states'>
 >(arg: [K, K1]): boolean;
+declare function match<
+  K extends keyof TestInterface['states'],
+  K1 extends keyof Lookup<TestInterface['states'][K], 'states'>,
+  K2 extends keyof Lookup<Lookup<TestInterface['states'][K], 'states'>, K1>
+>(arg: [K, K1, K2]): boolean;
+declare function match<
+  K extends keyof TestInterface['states'],
+  K1 extends keyof Lookup<TestInterface['states'][K], 'states'>,
+  K2 extends keyof Lookup<Lookup<TestInterface['states'][K], 'states'>, K1>,
+  K3 extends keyof Lookup<Lookup<Lookup<TestInterface['states'][K], 'states'>, K1>, K2>
+>(arg: [K, K1, K2, K3]): boolean;
 
-const b = match(['GREEN']);
+const b = match(['RED', 'WAIT', 'WAIN', 'WARD']);

@@ -66,7 +66,7 @@ interface LightProtocol {
 }
 
 // Light Configuration
-const config: ProtocolConfig<LightProtocol, LightStates.RED> = {
+const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED> = {
   initial: LightStates.RED,
   context: { value: 'RED.WALK' },
   states: {
@@ -128,15 +128,19 @@ const config: ProtocolConfig<LightProtocol, LightStates.RED> = {
   },
 };
 
-const match = matchFactory<LightProtocol>();
+const lightMatch = matchFactory<LightProtocol>();
 
-const valid1 = match(LightStates.GREEN);
-const valid2 = match(LightStates.RED);
-const valid3 = match(LightStates.RED, PedestrianStates.WALK);
+const valid1 = lightMatch(LightStates.GREEN);
+const valid2 = lightMatch(LightStates.RED);
+const valid3 = lightMatch(LightStates.RED, PedestrianStates.WALK);
 
-const invalid1 = match('invalid');
-const invalid2 = match(LightStates.YELLOW, PedestrianStates.WAIT);
-const invalid3 = match(LightStates.RED, PedestrianStates.WAIT, PedestrianStates.WALK);
+const invalid1 = lightMatch('invalid');
+const invalid2 = lightMatch(LightStates.YELLOW, PedestrianStates.WAIT);
+const invalid3 = lightMatch(
+  LightStates.RED,
+  PedestrianStates.WAIT,
+  PedestrianStates.WALK
+);
 
 enum AuthStates {
   LOGGED_IN = 'LOGGED_IN',
@@ -206,7 +210,60 @@ interface AuthProtocol {
   };
 }
 
-const match2 = matchFactory<AuthProtocol>();
+const authMatch = matchFactory<AuthProtocol>();
 
-const matched = match2(AuthStates.LOGGED_IN); // with this type guard context is { user: { username: string }; error: null };
-const matched2 = match2(AuthStates.ERROR); // with this type guard context is { user: null; error: string };
+const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT> = {
+  initial: AuthStates.LOGGED_OUT,
+  context: {
+    error: null,
+    user: null,
+  },
+  states: {
+    [AuthStates.LOGGED_OUT]: {
+      on: {
+        LOGIN: {
+          target: AuthStates.LOADING,
+          action: (_ctx, _event) => {
+            return { error: null, user: null };
+          },
+        },
+      },
+    },
+    [AuthStates.LOADING]: {
+      on: {
+        LOGIN_ERRROR: {
+          target: AuthStates.ERROR,
+          action: (_ctx, event) => {
+            return { error: event.payload.error, user: null };
+          },
+        },
+        LOGIN_SUCCESS: {
+          target: AuthStates.LOGGED_IN,
+          action: (_ctx, event) => {
+            return { error: null, user: event.payload.user };
+          },
+        },
+      },
+    },
+    [AuthStates.ERROR]: {
+      on: {
+        LOGIN: {
+          target: AuthStates.LOADING,
+          action: (_ctx, event) => {
+            return { error: null, user: null };
+          },
+        },
+      },
+    },
+    [AuthStates.LOGGED_IN]: {
+      on: {
+        LOGOUT: {
+          target: AuthStates.LOGGED_OUT,
+          action: (_ctx, _event) => {
+            return { error: null, user: null };
+          },
+        },
+      },
+    },
+  },
+};

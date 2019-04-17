@@ -74,26 +74,6 @@ export interface SchemaConfig<
   states: TransitionConfigMap<T>;
 }
 
-interface TestInterface {
-  states: {
-    GREEN: {};
-    YELLOW: {};
-    RED: {
-      states: {
-        WALK: {};
-        WAIT: {
-          WAIN: {
-            WARD: {};
-          };
-        };
-        STOP: {
-          WAX: {};
-        };
-      };
-    };
-  };
-}
-
 interface Schema {
   states?: Record<string, Schema>;
 }
@@ -106,24 +86,35 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
 
 //  use Lookup<T, K> instead of T[K] in cases where the compiler
 //  cannot verify that K is a key of T
-type Lookup<T, K> = K extends keyof T ? T[K] : never;
-type B = TestInterface['states'];
+export type Lookup<T, K> = K extends keyof T ? T[K] : never;
 
-declare function match<K extends keyof TestInterface['states']>(arg: [K]): boolean;
-declare function match<
-  K extends keyof TestInterface['states'],
-  K1 extends keyof Lookup<TestInterface['states'][K], 'states'>
->(arg: [K, K1]): boolean;
-declare function match<
-  K extends keyof TestInterface['states'],
-  K1 extends keyof Lookup<TestInterface['states'][K], 'states'>,
-  K2 extends keyof Lookup<Lookup<TestInterface['states'][K], 'states'>, K1>
->(arg: [K, K1, K2]): boolean;
-declare function match<
-  K extends keyof TestInterface['states'],
-  K1 extends keyof Lookup<TestInterface['states'][K], 'states'>,
-  K2 extends keyof Lookup<Lookup<TestInterface['states'][K], 'states'>, K1>,
-  K3 extends keyof Lookup<Lookup<Lookup<TestInterface['states'][K], 'states'>, K1>, K2>
->(arg: [K, K1, K2, K3]): boolean;
+interface PedestrianProtocol {
+  states: {
+    WALK: {};
+    WAIT: {};
+    STOP: {};
+  };
+}
+interface LightProtocol {
+  states: {
+    GREEN: {
+      context: {
+        value: 'GREEN';
+      };
+      transition: [{ to: 'YELLOW' }];
+    };
+    YELLOW: {};
+    RED: PedestrianProtocol;
+  };
+}
 
-const b = match(['RED', 'WAIT', 'WAIN', 'WARD']);
+const valid1 = match('RED', 'STOP');
+const valid2 = match('RED', 'STOP', 'REALLY_STOP');
+const valid3 = match('GREEN');
+const valid4 = match('YELLOW');
+const valid5 = match('RED');
+
+const invalid1 = match('RED', 'ST');
+const invalid2 = match('GREEN', 'STOP');
+const invalid3 = match('RE');
+const invalid4 = match('');

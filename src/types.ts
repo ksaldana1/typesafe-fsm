@@ -73,3 +73,39 @@ export interface SchemaConfig<
   context?: ContextMapFromStateSchema<T>[K];
   states: TransitionConfigMap<T>;
 }
+
+interface TestInterface {
+  states: {
+    GREEN: {};
+    YELLOW: {};
+    RED: {
+      states: {
+        WALK: {};
+        WAIT: {};
+        STOP: {};
+      };
+    };
+  };
+}
+
+interface Schema {
+  states?: Record<string, Schema>;
+}
+
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((
+  k: infer I
+) => void)
+  ? I
+  : never;
+
+//  use Lookup<T, K> instead of T[K] in cases where the compiler
+//  cannot verify that K is a key of T
+type Lookup<T, K> = K extends keyof T ? T[K] : never;
+
+declare function match<K extends keyof TestInterface['states']>(arg: [K]): boolean;
+declare function match<
+  K extends keyof TestInterface['states'],
+  K1 extends keyof Lookup<TestInterface['states'][K], 'states'>
+>(arg: [K, K1]): boolean;
+
+const b = match(['GREEN']);

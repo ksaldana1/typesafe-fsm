@@ -146,7 +146,7 @@ const config: SchemaConfig<LightProtocol, LightStates.RED> = {
     YELLOW: {
       on: {
         TIMER: (_ctx, _event) => {
-          return { value: 'RED' };
+          return { value: 'RED.WALK' };
         },
       },
     },

@@ -295,7 +295,10 @@ const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT, EffectActi
 };
 
 const actionImpls: ActionImplementations<typeof authConfig> = {
-  TELEMETRY: (ctx, event) => {
-    console.log('telemetry');
+  TELEMETRY: (_ctx, event) => {
+    if (event.type === AuthEventTypes.LOGIN) {
+      // event payload correctly narrowed
+      const { username, password } = event.payload;
+    }
   },
 };

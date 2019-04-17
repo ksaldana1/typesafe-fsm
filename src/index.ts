@@ -1,4 +1,4 @@
-import { TransitionConfig } from './types';
+import { TransitionConfig, TransitionConfigMap, SchemaConfig } from './types';
 
 enum PedestrianStates {
   WALK = 'WALK',
@@ -56,14 +56,14 @@ interface LightProtocol {
       transitions: [{ to: LightStates.RED; event: TimerEvent }];
     };
     [LightStates.RED]: {
-      context: { value: 'RED' };
+      context: { value: 'RED.WALK' };
       transitions: [{ to: LightStates.GREEN; event: TimerEvent }];
       states: PedestrianProtocol;
     };
   };
 }
 
-export const lightConfig: TransitionConfig<LightProtocol> = {
+export const lightConfig: TransitionConfigMap<LightProtocol> = {
   GREEN: {
     on: {
       TIMER: (ctx, event) => {
@@ -74,7 +74,7 @@ export const lightConfig: TransitionConfig<LightProtocol> = {
   YELLOW: {
     on: {
       TIMER: (ctx, event) => {
-        return { value: 'RED' };
+        return { value: 'RED.WALK' };
       },
     },
   },
@@ -90,11 +90,9 @@ export const lightConfig: TransitionConfig<LightProtocol> = {
       },
       WAIT: {
         on: {
-          PED_TIMER: [
-            (_ctx, _event) => {
-              console.log('pedTimer');
-            },
-          ],
+          PED_TIMER: (_ctx, _event) => {
+            return { value: 'RED.STOP' };
+          },
         },
       },
       WALK: {
@@ -102,6 +100,53 @@ export const lightConfig: TransitionConfig<LightProtocol> = {
           PED_TIMER: (ctx, event) => {
             return { value: 'RED.WAIT' };
           },
+        },
+      },
+    },
+  },
+};
+
+const config: SchemaConfig<LightProtocol, LightStates.RED> = {
+  initial: LightStates.RED,
+  context: { value: 'RED.WALK' },
+  states: {
+    GREEN: {
+      on: {
+        TIMER: (_ctx, _event) => {
+          return { value: 'YELLOW' };
+        },
+      },
+    },
+    RED: {
+      on: {
+        TIMER: (_ctx, _event) => {
+          return { value: 'GREEN' };
+        },
+      },
+      states: {
+        STOP: {
+          on: {},
+        },
+        WAIT: {
+          on: {
+            PED_TIMER: (_ctx, _event) => {
+              return { value: 'RED.STOP' };
+            },
+          },
+        },
+        WALK: {
+          on: {
+            PED_TIMER: (_ctx, _event) => {
+              return { value: 'RED.WAIT' };
+            },
+          },
+        },
+      },
+    },
+    YELLOW: {
+      on: {
+        TIMER: (_ctx, _event) => {
+          return { value: 'RED' };
         },
       },
     },

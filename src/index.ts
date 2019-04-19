@@ -234,14 +234,16 @@ const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT, EffectActi
   states: {
     [AuthStates.LOGGED_OUT]: {
       on: {
-        LOGIN: {
-          target: AuthStates.LOADING,
-          actions: [
-            (_ctx, _event) => {
-              return { error: null, user: null };
-            },
-          ],
-        },
+        LOGIN: [
+          {
+            target: AuthStates.LOADING,
+            actions: [
+              (_ctx, _event) => {
+                return { error: null, user: null };
+              },
+            ],
+          },
+        ],
       },
     },
     [AuthStates.LOADING]: {
@@ -265,15 +267,23 @@ const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT, EffectActi
           ],
         },
       },
-      invoke: (ctx, event) => {
-        return {
-          type: AuthEventTypes.LOGIN_SUCCESS,
-          payload: {
-            user: {
-              username: 'bob27',
-            },
-          },
-        };
+      invoke: (_ctx, _event) => {
+        const seed = Math.random();
+        return seed > 0.5
+          ? {
+              type: AuthEventTypes.LOGIN_SUCCESS,
+              payload: {
+                user: {
+                  username: 'bob27',
+                },
+              },
+            }
+          : {
+              type: AuthEventTypes.LOGIN_ERROR,
+              payload: {
+                error: 'LOGIN_ERROR',
+              },
+            };
       },
     },
     [AuthStates.ERROR]: {

@@ -1,4 +1,4 @@
-import { EventObject } from 'xstate';
+import { EventObject, SingleOrArray } from 'xstate';
 
 export interface StateProtocol<TEvents extends EventObject, TAllStates extends string> {
   states: { [K in TAllStates]: StateNode<TEvents, TAllStates> };
@@ -42,7 +42,7 @@ export interface TransitionConfig<
   TActions extends string
 > {
   on?: {
-    [E in EventUnionFromStateProtocol<TProtocol, TNode>['type']]: {
+    [E in EventUnionFromStateProtocol<TProtocol, TNode>['type']]: SingleOrArray<{
       actions: Array<
         | AssignFunction<
             ContextMapFromStateProtocol<TProtocol>[TNode],
@@ -58,7 +58,11 @@ export interface TransitionConfig<
         TransitionUnionFromStateProtocol<TProtocol, TNode>,
         { event: { type: E } }
       >['to'];
-    }
+      cond?: (
+        ctx: ContextMapFromStateProtocol<TProtocol>[TNode],
+        event: Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: E }>
+      ) => boolean;
+    }>
   };
   states?: TProtocol['states'][TNode]['states'] extends StateProtocol<any, any>
     ? TransitionConfigMap<TProtocol['states'][TNode]['states'], TActions>

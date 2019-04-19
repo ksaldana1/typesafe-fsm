@@ -4,6 +4,10 @@ import {
   ActionImplementations,
   StateProtocol,
   ContextMapFromStateProtocol,
+  InvokeImplementationConfig,
+  InvokeImplementationMap,
+  EventUnionFromStateProtocol,
+  TransitionUnionFromStateProtocol,
 } from './types';
 
 // Pedestrian Protocol
@@ -238,17 +242,25 @@ async function login(
   };
 }
 
-interface AuthConfig {
-  [AuthStates.LOADING]: {
-    onDone: { to: AuthStates.LOGGED_IN; event: LoginSuccessEvent };
-    onError: { to: AuthStates.ERROR; event: LoginErrorEvent };
-  };
-}
+// interface AuthConfig {
+//   [AuthStates.LOADING]: {
+//     onDone: { to: AuthStates.LOGGED_IN; event: LoginSuccessEvent };
+//     onError: { to: AuthStates.ERROR; event: LoginErrorEvent };
+//   };
+// }
+
+// const b: InvokeImplementationMap<AuthProtocol, AuthConfig> = {
+//   [AuthStates.LOADING]: {
+//     onDone: (ctx, event) => {},
+//     onError: (ctx, event) => {},
+//   },
+// };
 
 const authMatch = matchFactory<AuthProtocol>();
 
 enum EffectActions {
   TELEMETRY = 'TELEMETRY',
+  NOTIFY_LOGGED_IN = 'NOTIFY_LOGGED_IN',
 }
 
 const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT, EffectActions> = {
@@ -287,8 +299,19 @@ const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT, EffectActi
             (_ctx, event) => {
               return { error: null, user: event.payload.user };
             },
+            EffectActions.NOTIFY_LOGGED_IN,
           ],
         },
+      },
+      invoke: (ctx, event) => {
+        return {
+          type: AuthEventTypes.LOGIN_SUCCESS,
+          payload: {
+            user: {
+              username: 'bob27',
+            },
+          },
+        };
       },
     },
     [AuthStates.ERROR]: {
@@ -325,4 +348,11 @@ const actionImpls: ActionImplementations<typeof authConfig> = {
       const { username, password } = event.payload;
     }
   },
+  NOTIFY_LOGGED_IN: (_ctx, event) => {
+    if (event.type === AuthEventTypes.LOGIN_SUCCESS) {
+      console.log(event.payload.user);
+    }
+  },
 };
+
+type Test = TransitionUnionFromStateProtocol<AuthProtocol, keyof AuthProtocol['states']>;

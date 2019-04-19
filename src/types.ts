@@ -26,12 +26,12 @@ export type ContextUnionFromStateProtocol<
   TStateSchema extends StateProtocol<any, any>
 > = TStateSchema['states'][keyof TStateSchema['states']]['context'];
 
-type EventUnionFromStateProtocol<
+export type EventUnionFromStateProtocol<
   T extends StateProtocol<any, any>,
   K extends keyof T['states']
 > = T['states'][K]['transitions'][number]['event'];
 
-type TransitionUnionFromStateProtocol<
+export type TransitionUnionFromStateProtocol<
   T extends StateProtocol<any, any>,
   K extends keyof T['states']
 > = T['states'][K]['transitions'][number];
@@ -63,6 +63,13 @@ export interface TransitionConfig<
   states?: TProtocol['states'][TNode]['states'] extends StateProtocol<any, any>
     ? TransitionConfigMap<TProtocol['states'][TNode]['states'], TActions>
     : never;
+  invoke?: (
+    ctx: ContextMapFromStateProtocol<TProtocol>[TNode],
+    event: Extract<
+      TransitionUnionFromStateProtocol<TProtocol, keyof TProtocol['states']>,
+      { to: TNode }
+    >
+  ) => TProtocol['states'][TNode]['transitions'][number]['event'];
 }
 
 export type TransitionConfigMap<
@@ -114,6 +121,11 @@ export type InvokeImplementationConfig<
     event: TConfig['onError']['event']
   ) => ContextMapFromStateProtocol<T>[TConfig['onError']['to']];
 };
+
+export type InvokeImplementationMap<
+  T extends StateProtocol<any, any>,
+  TConfig extends { [K in keyof T['states']]?: InvokeMapper<any, any> }
+> = { [K in keyof T['states']]: InvokeImplementationConfig<T, K, TConfig[K]> };
 
 export type ActionImplementations<T> = T extends ProtocolConfig<
   infer Protocol,

@@ -1,14 +1,4 @@
-import {
-  matchFactory,
-  ProtocolConfig,
-  ActionImplementations,
-  StateProtocol,
-  ContextMapFromStateProtocol,
-  InvokeImplementationConfig,
-  InvokeImplementationMap,
-  EventUnionFromStateProtocol,
-  TransitionUnionFromStateProtocol,
-} from './types';
+import { ActionImplementations, matchFactory, ProtocolConfig } from './types';
 
 // Pedestrian Protocol
 enum PedestrianStates {

@@ -92,41 +92,6 @@ export interface ProtocolConfig<
   states: TransitionConfigMap<T, TActions>;
 }
 
-export type InvokeMapper<
-  TSuccessTransition extends Transition<any, any>,
-  TErrorTransition extends Transition<any, any>
-> = {
-  onDone: TSuccessTransition;
-  onError: TErrorTransition;
-};
-
-export type InvokeImplementationConfig<
-  T extends StateProtocol<any, any>,
-  K extends keyof T['states'],
-  TConfig extends InvokeMapper<any, any>
-> = {
-  src: (
-    ctx: ContextMapFromStateProtocol<T>[K],
-    event: Extract<
-      ContextMapFromStateProtocol<T>[keyof T['states']]['transitions'],
-      { to: K }
-    >
-  ) => Promise<TConfig['onDone']['event']['payload']>;
-  onDone: (
-    ctx: ContextMapFromStateProtocol<T>[K],
-    event: TConfig['onDone']['event']
-  ) => ContextMapFromStateProtocol<T>[TConfig['onDone']['to']];
-  onError: (
-    ctx: ContextMapFromStateProtocol<T>[K],
-    event: TConfig['onError']['event']
-  ) => ContextMapFromStateProtocol<T>[TConfig['onError']['to']];
-};
-
-export type InvokeImplementationMap<
-  T extends StateProtocol<any, any>,
-  TConfig extends { [K in keyof T['states']]?: InvokeMapper<any, any> }
-> = { [K in keyof T['states']]: InvokeImplementationConfig<T, K, TConfig[K]> };
-
 export type ActionImplementations<T> = T extends ProtocolConfig<
   infer Protocol,
   any,

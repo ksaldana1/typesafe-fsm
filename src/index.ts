@@ -1,4 +1,4 @@
-import { matchFactory, ProtocolConfig, ActionImplementations } from './types';
+import { ActionImplementations, matchFactory, ProtocolConfig } from './types';
 
 // Pedestrian Protocol
 enum PedestrianStates {
@@ -78,7 +78,6 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, 'hello'> = {
             (_ctx, _event) => {
               return { value: 'YELLOW' };
             },
-            'hello',
           ],
         },
       },
@@ -146,7 +145,7 @@ const valid2 = lightMatch(LightStates.RED);
 const valid3 = lightMatch(LightStates.RED, PedestrianStates.WALK);
 
 const invalid1 = lightMatch('invalid');
-const invalid2 = lightMatch(LightStates.YELLOW, PedestrianStates.WAIT);
+const invalid2 = lightMatch(LightStates.YELLOW, PedestrianStates.WALK);
 const invalid3 = lightMatch(
   LightStates.RED,
   PedestrianStates.WAIT,
@@ -221,10 +220,9 @@ interface AuthProtocol {
   };
 }
 
-const authMatch = matchFactory<AuthProtocol>();
-
 enum EffectActions {
   TELEMETRY = 'TELEMETRY',
+  NOTIFY_LOGGED_IN = 'NOTIFY_LOGGED_IN',
 }
 
 const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT, EffectActions> = {
@@ -236,14 +234,16 @@ const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT, EffectActi
   states: {
     [AuthStates.LOGGED_OUT]: {
       on: {
-        LOGIN: {
-          target: AuthStates.LOADING,
-          actions: [
-            (_ctx, _event) => {
-              return { error: null, user: null };
-            },
-          ],
-        },
+        LOGIN: [
+          {
+            target: AuthStates.LOADING,
+            actions: [
+              (_ctx, _event) => {
+                return { error: null, user: null };
+              },
+            ],
+          },
+        ],
       },
     },
     [AuthStates.LOADING]: {
@@ -263,8 +263,27 @@ const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT, EffectActi
             (_ctx, event) => {
               return { error: null, user: event.payload.user };
             },
+            EffectActions.NOTIFY_LOGGED_IN,
           ],
         },
+      },
+      invoke: (_ctx, _event) => {
+        const seed = Math.random();
+        return seed > 0.5
+          ? {
+              type: AuthEventTypes.LOGIN_SUCCESS,
+              payload: {
+                user: {
+                  username: 'bob27',
+                },
+              },
+            }
+          : {
+              type: AuthEventTypes.LOGIN_ERROR,
+              payload: {
+                error: 'LOGIN_ERROR',
+              },
+            };
       },
     },
     [AuthStates.ERROR]: {
@@ -299,6 +318,11 @@ const actionImpls: ActionImplementations<typeof authConfig> = {
     if (event.type === AuthEventTypes.LOGIN) {
       // event payload correctly narrowed
       const { username, password } = event.payload;
+    }
+  },
+  NOTIFY_LOGGED_IN: (_ctx, event) => {
+    if (event.type === AuthEventTypes.LOGIN_SUCCESS) {
+      console.log(event.payload.user);
     }
   },
 };

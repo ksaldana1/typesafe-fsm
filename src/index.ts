@@ -1,4 +1,10 @@
-import { matchFactory, ProtocolConfig, ActionImplementations } from './types';
+import {
+  matchFactory,
+  ProtocolConfig,
+  ActionImplementations,
+  StateProtocol,
+  ContextMapFromStateProtocol,
+} from './types';
 
 // Pedestrian Protocol
 enum PedestrianStates {
@@ -218,6 +224,24 @@ interface AuthProtocol {
       context: { user: null; error: string };
       transitions: [{ to: AuthStates.LOADING; event: LoginEvent }];
     };
+  };
+}
+
+async function login(
+  ctx: { user: null; error: null },
+  event: LoginEvent
+): Promise<{ user: { username: string } }> {
+  return {
+    user: {
+      username: event.payload.username,
+    },
+  };
+}
+
+interface AuthConfig {
+  [AuthStates.LOADING]: {
+    onDone: { to: AuthStates.LOGGED_IN; event: LoginSuccessEvent };
+    onError: { to: AuthStates.ERROR; event: LoginErrorEvent };
   };
 }
 

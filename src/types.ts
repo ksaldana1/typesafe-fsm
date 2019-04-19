@@ -41,7 +41,7 @@ export interface TransitionConfig<
   TNode extends keyof TProtocol['states'],
   TActions extends string
 > {
-  on: {
+  on?: {
     [E in EventUnionFromStateProtocol<TProtocol, TNode>['type']]: {
       actions: Array<
         | AssignFunction<
@@ -84,6 +84,36 @@ export interface ProtocolConfig<
   context?: ContextMapFromStateProtocol<T>[K];
   states: TransitionConfigMap<T, TActions>;
 }
+
+export type InvokeMapper<
+  TSuccessTransition extends Transition<any, any>,
+  TErrorTransition extends Transition<any, any>
+> = {
+  onDone: TSuccessTransition;
+  onError: TErrorTransition;
+};
+
+export type InvokeImplementationConfig<
+  T extends StateProtocol<any, any>,
+  K extends keyof T['states'],
+  TConfig extends InvokeMapper<any, any>
+> = {
+  src: (
+    ctx: ContextMapFromStateProtocol<T>[K],
+    event: Extract<
+      ContextMapFromStateProtocol<T>[keyof T['states']]['transitions'],
+      { to: K }
+    >
+  ) => Promise<TConfig['onDone']['event']['payload']>;
+  onDone: (
+    ctx: ContextMapFromStateProtocol<T>[K],
+    event: TConfig['onDone']['event']
+  ) => ContextMapFromStateProtocol<T>[TConfig['onDone']['to']];
+  onError: (
+    ctx: ContextMapFromStateProtocol<T>[K],
+    event: TConfig['onError']['event']
+  ) => ContextMapFromStateProtocol<T>[TConfig['onError']['to']];
+};
 
 export type ActionImplementations<T> = T extends ProtocolConfig<
   infer Protocol,
@@ -131,3 +161,37 @@ export function matchFactory<T extends StateProtocol<any, any>>() {
   }
   return match;
 }
+
+// Playing with invoke types
+export type ServiceCall<TContext, TEvent, TReturnValue> = (
+  ctx: TContext,
+  event: TEvent
+) => Promise<TReturnValue>;
+
+export type PluckProtocolGenerics<T> = T extends StateProtocol<
+  infer TEvents,
+  infer TStates
+>
+  ? { events: TEvents; states: TStates }
+  : never;
+
+export type InvokeConfig<
+  TProtocol extends StateProtocol<any, any>,
+  K extends keyof TProtocol['states'],
+  TSuccessTransition extends PluckProtocolGenerics<TProtocol>['states'][K]['transitions']
+> =
+  // TErrorTransition extends PluckProtocolGenerics<TProtocol>['states'][K]['transitions']
+  {
+    service: ServiceCall<
+      ContextMapFromStateProtocol<TProtocol>[K],
+      TSuccessTransition['event'],
+      TSuccessTransition['event']['payload']
+    >;
+    onDone: {
+      target: TSuccessTransition['to'];
+      onDone: (
+        ctx: ContextMapFromStateProtocol<TProtocol>[K],
+        event: { data: TSuccessTransition['event']['payload'] }
+      ) => ContextMapFromStateProtocol<TProtocol>[TSuccessTransition['to']];
+    };
+  };

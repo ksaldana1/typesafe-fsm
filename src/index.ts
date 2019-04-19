@@ -88,7 +88,6 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, 'hello'> = {
             (_ctx, _event) => {
               return { value: 'YELLOW' };
             },
-            'hello',
           ],
         },
       },
@@ -156,7 +155,7 @@ const valid2 = lightMatch(LightStates.RED);
 const valid3 = lightMatch(LightStates.RED, PedestrianStates.WALK);
 
 const invalid1 = lightMatch('invalid');
-const invalid2 = lightMatch(LightStates.YELLOW, PedestrianStates.WAIT);
+const invalid2 = lightMatch(LightStates.YELLOW, PedestrianStates.WALK);
 const invalid3 = lightMatch(
   LightStates.RED,
   PedestrianStates.WAIT,
@@ -230,33 +229,6 @@ interface AuthProtocol {
     };
   };
 }
-
-async function login(
-  ctx: { user: null; error: null },
-  event: LoginEvent
-): Promise<{ user: { username: string } }> {
-  return {
-    user: {
-      username: event.payload.username,
-    },
-  };
-}
-
-// interface AuthConfig {
-//   [AuthStates.LOADING]: {
-//     onDone: { to: AuthStates.LOGGED_IN; event: LoginSuccessEvent };
-//     onError: { to: AuthStates.ERROR; event: LoginErrorEvent };
-//   };
-// }
-
-// const b: InvokeImplementationMap<AuthProtocol, AuthConfig> = {
-//   [AuthStates.LOADING]: {
-//     onDone: (ctx, event) => {},
-//     onError: (ctx, event) => {},
-//   },
-// };
-
-const authMatch = matchFactory<AuthProtocol>();
 
 enum EffectActions {
   TELEMETRY = 'TELEMETRY',
@@ -354,5 +326,3 @@ const actionImpls: ActionImplementations<typeof authConfig> = {
     }
   },
 };
-
-type Test = TransitionUnionFromStateProtocol<AuthProtocol, keyof AuthProtocol['states']>;

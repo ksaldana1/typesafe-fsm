@@ -1,4 +1,11 @@
-import { ActionImplementations, matchFactory, ProtocolConfig } from './types';
+import {
+  ActionImplementations,
+  matchFactory,
+  ProtocolConfig,
+  NullEvent,
+  EventUnionFromStateProtocol,
+  AddNullTransition,
+} from './types';
 
 // Pedestrian Protocol
 enum PedestrianStates {
@@ -72,7 +79,8 @@ interface LightProtocol {
       context: { value: 'RED.WALK' };
       transitions: [
         { to: LightStates.GREEN; event: TimerEvent },
-        { to: LightStates.RED; event: PowerOutageEvent }
+        { to: LightStates.RED; event: PowerOutageEvent },
+        { to: LightStates.YELLOW; event: NullEvent }
       ];
       states: PedestrianProtocol;
     };
@@ -106,6 +114,7 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, ''> = {
     },
     RED: {
       on: {
+        '': {},
         TIMER: {
           target: LightStates.GREEN,
           actions: [
@@ -357,6 +366,9 @@ const actionImpls: ActionImplementations<typeof authConfig> = {
     if (event.type === AuthEventTypes.LOGIN) {
       // event payload correctly narrowed
       const { username, password } = event.payload;
+    }
+    if (_ctx.user && _ctx.user.username) {
+      const e = event.type;
     }
   },
   NOTIFY_LOGGED_IN: (_ctx, event) => {

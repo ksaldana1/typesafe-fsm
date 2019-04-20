@@ -19,6 +19,10 @@ export interface Transition<TEvents extends EventObject, TAllStates extends stri
   event: TEvents;
 }
 
+export interface NullEvent {
+  type: '@XSTATE_INTERNAL_NULL_EVENT';
+}
+
 // I'm sorry Anders... this isn't your fault
 export type ContextMapFromStateProtocol<TStateSchema extends StateProtocol<any, any>> = {
   [K in keyof TStateSchema['states']]: TStateSchema['states'][K]['context']
@@ -38,31 +42,45 @@ export type TransitionUnionFromStateProtocol<
   K extends keyof T['states']
 > = T['states'][K]['transitions'][number];
 
+export type AddNullTransition<
+  TProtocol extends StateProtocol<any, any>,
+  TNode extends keyof TProtocol['states']
+> = NullEvent extends Extract<EventUnionFromStateProtocol<TProtocol, TNode>, NullEvent>
+  ? ''
+  : never;
 export interface TransitionConfig<
   TProtocol extends StateProtocol<any, any>,
   TNode extends keyof TProtocol['states'],
   TActions extends string
 > {
   on?: {
-    [E in EventUnionFromStateProtocol<TProtocol, TNode>['type']]: SingleOrArray<{
+    [E in
+      | Exclude<EventUnionFromStateProtocol<TProtocol, TNode>['type'], NullEvent['type']>
+      | AddNullTransition<TProtocol, TNode>]: SingleOrArray<{
       actions: Array<
         | AssignFunction<
             ContextMapFromStateProtocol<TProtocol>[TNode],
-            Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: E }>,
+            Extract<
+              EventUnionFromStateProtocol<TProtocol, TNode>,
+              { type: '' extends E ? NullEvent['type'] : E }
+            >,
             ContextMapFromStateProtocol<TProtocol>[Extract<
               TransitionUnionFromStateProtocol<TProtocol, TNode>,
-              { event: { type: E } }
+              { event: { type: '' extends E ? NullEvent['type'] : E } }
             >['to']]
           >
         | TActions
       >;
       target: Extract<
         TransitionUnionFromStateProtocol<TProtocol, TNode>,
-        { event: { type: E } }
+        { event: { type: '' extends E ? NullEvent['type'] : E } }
       >['to'];
       cond?: (
         ctx: ContextMapFromStateProtocol<TProtocol>[TNode],
-        event: Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: E }>
+        event: Extract<
+          EventUnionFromStateProtocol<TProtocol, TNode>,
+          { type: '' extends E ? NullEvent['type'] : E }
+        >
       ) => boolean;
     }>
   };

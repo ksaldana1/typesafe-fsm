@@ -147,7 +147,10 @@ export function matchFactory<T extends StateProtocol<any, any>>() {
   function match<
     K extends keyof T['states'],
     K1 extends keyof Lookup<Lookup<T['states'][K], 'states'>, 'states'>,
-    K2 extends keyof Lookup<Lookup<Lookup<T['states'][K], 'states'>, K1>, 'states'>
+    K2 extends keyof Lookup<
+      Lookup<Lookup<Lookup<Lookup<T['states'][K], 'states'>, 'states'>, K1>, 'states'>,
+      'states'
+    >
   >(k: K, k1: K1, k2: K2): boolean;
   function match<
     K extends keyof T['states'],

@@ -5,97 +5,97 @@ import {
   NullEvent,
   EventUnionFromStateProtocol,
   AddNullTransition,
+  Lookup,
 } from './types';
 
 // Pedestrian Protocol
-enum PedestrianStates {
-  WALK = 'WALK',
-  WAIT = 'WAIT',
-  STOP = 'STOP',
-}
-
-enum PedestrianEventTypes {
-  PED_TIMER = 'PED_TIMER',
-}
 
 interface PedestrianTimerEvent {
-  type: PedestrianEventTypes.PED_TIMER;
+  type: 'PED_TIMER';
 }
 
 interface PedestrianProtocol {
   states: {
-    [PedestrianStates.WAIT]: {
+    WAIT: {
       context: { value: 'RED.WAIT' };
-      transitions: [{ to: PedestrianStates.STOP; event: PedestrianTimerEvent }];
+      transitions: [{ to: 'STOP'; event: PedestrianTimerEvent }];
     };
-    [PedestrianStates.WALK]: {
+    WALK: {
       context: { value: 'RED.WALK' };
-      transitions: [{ to: PedestrianStates.WAIT; event: PedestrianTimerEvent }];
+      transitions: [{ to: 'WAIT'; event: PedestrianTimerEvent }];
+      states: NestedState;
     };
-    [PedestrianStates.STOP]: {
+    STOP: {
       context: { value: 'RED.STOP' };
       transitions: [];
     };
   };
 }
 
-// Light Protocol
-enum LightStates {
-  GREEN = 'GREEN',
-  YELLOW = 'YELLOW',
-  RED = 'RED',
+interface NestedState {
+  states: {
+    JOG: {
+      context: {};
+      transitions: [];
+    };
+    SPRINT: {
+      context: {};
+      transitions: [];
+    };
+    DO_THE_WORM: {
+      context: {};
+      transitions: [];
+    };
+  };
 }
 
-enum LightEventTypes {
-  TIMER = 'TIMER',
-  POWER_OUTAGE = 'POWER_OUTAGE',
-}
+// Light Protocol
 
 interface TimerEvent {
-  type: LightEventTypes.TIMER;
+  type: 'TIMER';
 }
 
 interface PowerOutageEvent {
-  type: LightEventTypes.POWER_OUTAGE;
+  type: 'POWER_OUTAGE';
 }
 
 interface LightProtocol {
   states: {
-    [LightStates.GREEN]: {
+    GREEN: {
       context: { value: 'GREEN' };
       transitions: [
-        { to: LightStates.YELLOW; event: TimerEvent },
-        { to: LightStates.RED; event: PowerOutageEvent }
+        { to: 'YELLOW'; event: TimerEvent },
+        { to: 'RED'; event: PowerOutageEvent }
       ];
     };
-    [LightStates.YELLOW]: {
+    YELLOW: {
       context: { value: 'YELLOW' };
       transitions: [
-        { to: LightStates.RED; event: TimerEvent },
-        { to: LightStates.RED; event: PowerOutageEvent }
+        { to: 'RED'; event: TimerEvent },
+        { to: 'RED'; event: PowerOutageEvent }
       ];
     };
-    [LightStates.RED]: {
+    RED: {
       context: { value: 'RED.WALK' };
       transitions: [
-        { to: LightStates.GREEN; event: TimerEvent },
-        { to: LightStates.RED; event: PowerOutageEvent },
-        { to: LightStates.YELLOW; event: NullEvent }
+        { to: 'GREEN'; event: TimerEvent },
+        { to: 'RED'; event: PowerOutageEvent }
       ];
       states: PedestrianProtocol;
     };
   };
 }
+type D = LightProtocol['states']['RED']['states']['states']['WALK']['states']['states'];
 
 // Light Configuration
-const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, ''> = {
-  initial: LightStates.RED,
+const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
+  initial: 'RED',
   context: { value: 'RED.WALK' },
   states: {
     GREEN: {
       on: {
         TIMER: {
-          target: LightStates.YELLOW,
+          target: 'YELLOW',
           actions: [
             (_ctx, _event) => {
               return { value: 'YELLOW' };
@@ -103,7 +103,7 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, ''> = {
           ],
         },
         POWER_OUTAGE: {
-          target: LightStates.RED,
+          target: 'RED',
           actions: [
             (_ctx, _event) => {
               return { value: 'RED.WALK' };
@@ -114,9 +114,8 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, ''> = {
     },
     RED: {
       on: {
-        '': {},
         TIMER: {
-          target: LightStates.GREEN,
+          target: 'GREEN',
           actions: [
             (_ctx, _event) => {
               return { value: 'GREEN' };
@@ -124,7 +123,7 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, ''> = {
           ],
         },
         POWER_OUTAGE: {
-          target: LightStates.RED,
+          target: 'RED',
           actions: [
             (_ctx, _event) => {
               return _ctx;
@@ -133,14 +132,14 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, ''> = {
         },
       },
       states: {
-        initial: PedestrianStates.WALK,
+        initial: 'WALK',
         STOP: {
           on: {},
         },
         WAIT: {
           on: {
             PED_TIMER: {
-              target: PedestrianStates.STOP,
+              target: 'STOP',
               actions: [
                 (_ctx, _event) => {
                   return { value: 'RED.STOP' };
@@ -152,7 +151,7 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, ''> = {
         WALK: {
           on: {
             PED_TIMER: {
-              target: PedestrianStates.WAIT,
+              target: 'WAIT',
               actions: [
                 (_ctx, _event) => {
                   return { value: 'RED.WAIT' };
@@ -166,7 +165,7 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, ''> = {
     YELLOW: {
       on: {
         TIMER: {
-          target: LightStates.RED,
+          target: 'RED',
           actions: [
             (_ctx, _event) => {
               return { value: 'RED.WALK' };
@@ -174,7 +173,7 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, ''> = {
           ],
         },
         POWER_OUTAGE: {
-          target: LightStates.RED,
+          target: 'RED',
           actions: [
             (_ctx, _event) => {
               return { value: 'RED.WALK' };
@@ -186,19 +185,9 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, ''> = {
   },
 };
 
-const lightMatch = matchFactory<LightProtocol>();
+const match = matchFactory<LightProtocol>();
 
-const valid1 = lightMatch(LightStates.GREEN);
-const valid2 = lightMatch(LightStates.RED);
-const valid3 = lightMatch(LightStates.RED, PedestrianStates.WALK);
-
-// const invalid1 = lightMatch('invalid');
-// const invalid2 = lightMatch(LightStates.YELLOW, PedestrianStates.WAIT);
-// const invalid3 = lightMatch(
-//   LightStates.RED,
-//   PedestrianStates.WAIT,
-//   PedestrianStates.WALK
-// );
+const testing = match('GREEN');
 
 enum AuthStates {
   LOGGED_IN = 'LOGGED_IN',

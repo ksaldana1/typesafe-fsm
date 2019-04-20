@@ -1,4 +1,4 @@
-import { EventObject } from 'xstate';
+import { EventObject, SingleOrArray } from 'xstate';
 
 export interface StateProtocol<TEvents extends EventObject, TAllStates extends string> {
   states: { [K in TAllStates]: StateNode<TEvents, TAllStates> };
@@ -26,12 +26,12 @@ export type ContextUnionFromStateProtocol<
   TStateSchema extends StateProtocol<any, any>
 > = TStateSchema['states'][keyof TStateSchema['states']]['context'];
 
-type EventUnionFromStateProtocol<
+export type EventUnionFromStateProtocol<
   T extends StateProtocol<any, any>,
   K extends keyof T['states']
 > = T['states'][K]['transitions'][number]['event'];
 
-type TransitionUnionFromStateProtocol<
+export type TransitionUnionFromStateProtocol<
   T extends StateProtocol<any, any>,
   K extends keyof T['states']
 > = T['states'][K]['transitions'][number];
@@ -41,8 +41,8 @@ export interface TransitionConfig<
   TNode extends keyof TProtocol['states'],
   TActions extends string
 > {
-  on: {
-    [E in EventUnionFromStateProtocol<TProtocol, TNode>['type']]: {
+  on?: {
+    [E in EventUnionFromStateProtocol<TProtocol, TNode>['type']]: SingleOrArray<{
       actions: Array<
         | AssignFunction<
             ContextMapFromStateProtocol<TProtocol>[TNode],
@@ -58,13 +58,24 @@ export interface TransitionConfig<
         TransitionUnionFromStateProtocol<TProtocol, TNode>,
         { event: { type: E } }
       >['to'];
-    }
+      cond?: (
+        ctx: ContextMapFromStateProtocol<TProtocol>[TNode],
+        event: Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: E }>
+      ) => boolean;
+    }>
   };
   states?: TProtocol['states'][TNode]['states'] extends StateProtocol<any, infer States>
     ? TransitionConfigMap<TProtocol['states'][TNode]['states'], TActions> & {
         initial: keyof TProtocol['states'][TNode]['states']['states'];
       }
     : never;
+  invoke?: (
+    ctx: ContextMapFromStateProtocol<TProtocol>[TNode],
+    event: Extract<
+      TransitionUnionFromStateProtocol<TProtocol, keyof TProtocol['states']>,
+      { to: TNode }
+    >
+  ) => TProtocol['states'][TNode]['transitions'][number]['event'];
 }
 
 export type TransitionConfigMap<
@@ -133,3 +144,37 @@ export function matchFactory<T extends StateProtocol<any, any>>() {
   }
   return match;
 }
+
+// Playing with invoke types
+export type ServiceCall<TContext, TEvent, TReturnValue> = (
+  ctx: TContext,
+  event: TEvent
+) => Promise<TReturnValue>;
+
+export type PluckProtocolGenerics<T> = T extends StateProtocol<
+  infer TEvents,
+  infer TStates
+>
+  ? { events: TEvents; states: TStates }
+  : never;
+
+export type InvokeConfig<
+  TProtocol extends StateProtocol<any, any>,
+  K extends keyof TProtocol['states'],
+  TSuccessTransition extends PluckProtocolGenerics<TProtocol>['states'][K]['transitions']
+> =
+  // TErrorTransition extends PluckProtocolGenerics<TProtocol>['states'][K]['transitions']
+  {
+    service: ServiceCall<
+      ContextMapFromStateProtocol<TProtocol>[K],
+      TSuccessTransition['event'],
+      TSuccessTransition['event']['payload']
+    >;
+    onDone: {
+      target: TSuccessTransition['to'];
+      onDone: (
+        ctx: ContextMapFromStateProtocol<TProtocol>[K],
+        event: { data: TSuccessTransition['event']['payload'] }
+      ) => ContextMapFromStateProtocol<TProtocol>[TSuccessTransition['to']];
+    };
+  };

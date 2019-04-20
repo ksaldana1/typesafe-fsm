@@ -1,4 +1,4 @@
-import { EventObject, SingleOrArray } from 'xstate';
+import { EventObject, SingleOrArray, DelayedTransitions } from 'xstate';
 
 export interface StateProtocol<TEvents extends EventObject, TAllStates extends string> {
   states: { [K in TAllStates]: StateNode<TEvents, TAllStates> };
@@ -15,12 +15,17 @@ export interface StateNode<
 }
 
 export interface Transition<TEvents extends EventObject, TAllStates extends string> {
-  to: TAllStates;
-  event: TEvents;
+  readonly to: TAllStates;
+  readonly event: TEvents;
 }
 
 export interface NullEvent {
-  type: '@XSTATE_INTERNAL_NULL_EVENT';
+  readonly type: '@XSTATE_INTERNAL_NULL_EVENT';
+}
+
+export interface DelayTransition<T extends number> {
+  readonly type: '@XSTATE_DELAY_TRANSITION_EVENT';
+  readonly __delay: T;
 }
 
 // I'm sorry Anders... this isn't your fault
@@ -60,9 +65,9 @@ export interface TransitionConfig<
   on?: {
     [E in
       | Exclude<
-          EventUnionFromStateProtocolNode<TProtocol, TNode>['type'],
-          NullEvent['type']
-        >
+          EventUnionFromStateProtocolNode<TProtocol, TNode>,
+          NullEvent | DelayTransition<any>
+        >['type']
       | AddNullTransition<TProtocol, TNode>]: SingleOrArray<{
       actions: Array<
         | AssignFunction<
@@ -103,7 +108,40 @@ export interface TransitionConfig<
       { to: TNode }
     >
   ) => TProtocol['states'][TNode]['transitions'][number]['event'];
+  after?: {
+    [Delay in PluckDelay<
+      Extract<EventUnionFromStateProtocolNode<TProtocol, TNode>, DelayTransition<any>>
+    >]: SingleOrArray<{
+      actions: Array<
+        | AssignFunction<
+            ContextMapFromStateProtocol<TProtocol>[TNode],
+            Extract<
+              EventUnionFromStateProtocolNode<TProtocol, TNode>,
+              DelayTransition<Delay>
+            >,
+            ContextMapFromStateProtocol<TProtocol>[Extract<
+              TransitionUnionFromStateProtocolNode<TProtocol, TNode>,
+              { event: DelayTransition<Delay> }
+            >['to']]
+          >
+        | TActions
+      >;
+      target: Extract<
+        TransitionUnionFromStateProtocolNode<TProtocol, TNode>,
+        { event: DelayTransition<Delay> }
+      >['to'];
+      cond?: (
+        ctx: ContextMapFromStateProtocol<TProtocol>[TNode],
+        event: Extract<
+          EventUnionFromStateProtocolNode<TProtocol, TNode>,
+          { type: DelayTransition<Delay> }
+        >
+      ) => boolean;
+    }>
+  };
 }
+
+export type PluckDelay<T> = T extends DelayTransition<infer Delay> ? Delay : never;
 
 export type TransitionConfigMap<
   T extends StateProtocol<any, any>,

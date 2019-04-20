@@ -6,6 +6,8 @@ import {
   EventUnionFromStateProtocolNode,
   AddNullTransition,
   Lookup,
+  DelayTransition,
+  PluckDelay,
 } from './types';
 
 // Pedestrian Protocol
@@ -72,7 +74,8 @@ interface LightProtocol {
       context: { value: 'YELLOW' };
       transitions: [
         { to: 'RED'; event: TimerEvent },
-        { to: 'RED'; event: PowerOutageEvent }
+        { to: 'RED'; event: PowerOutageEvent },
+        { to: 'GREEN'; event: DelayTransition<1000> }
       ];
     };
     RED: {
@@ -85,7 +88,8 @@ interface LightProtocol {
     };
   };
 }
-type D = LightProtocol['states']['RED']['states']['states']['WALK']['states']['states'];
+
+type C = EventUnionFromStateProtocolNode<LightProtocol, 'RED'>;
 
 // Light Configuration
 const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
@@ -177,6 +181,18 @@ const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
           actions: [
             (_ctx, _event) => {
               return { value: 'RED.WALK' };
+            },
+          ],
+        },
+      },
+      after: {
+        1000: {
+          target: 'GREEN',
+          actions: [
+            (ctx, event) => {
+              return {
+                value: 'GREEN',
+              };
             },
           ],
         },

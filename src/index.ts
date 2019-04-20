@@ -3,7 +3,7 @@ import {
   matchFactory,
   ProtocolConfig,
   NullEvent,
-  EventUnionFromStateProtocol,
+  EventUnionFromStateProtocolNode,
   AddNullTransition,
   Lookup,
 } from './types';
@@ -184,10 +184,6 @@ const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
     },
   },
 };
-
-const match = matchFactory<LightProtocol>();
-
-const testing = match('GREEN');
 
 enum AuthStates {
   LOGGED_IN = 'LOGGED_IN',

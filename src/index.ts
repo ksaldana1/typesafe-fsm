@@ -5,6 +5,7 @@ import {
   TransitionUnionFromStateProtocol,
   ContextMapFromStateProtocol,
   Transition,
+  AssignUnionUtility,
 } from './types';
 
 // Pedestrian Protocol
@@ -229,11 +230,6 @@ interface AuthProtocol {
     };
   };
 }
-export type B = TransitionUnionFromStateProtocol<AuthProtocol, AuthStates.LOGGED_OUT>;
-
-type C<T> = T extends Transition<any, any> ? T[] : never;
-
-type D = C<B>;
 
 enum EffectActions {
   TELEMETRY = 'TELEMETRY',
@@ -251,12 +247,16 @@ const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT, EffectActi
       on: {
         LOGIN: [
           {
+            actions: (ctx, event) => {
+              return { user: null, error: null };
+            },
+            target: AuthStates.LOADING,
+          },
+          {
+            actions: (ctx, event) => {
+              return { user: { username: 'mock' }, error: null };
+            },
             target: AuthStates.LOGGED_IN,
-            actions: [
-              (_ctx, _event) => {
-                return { error: null, user: null };
-              },
-            ],
           },
         ],
       },

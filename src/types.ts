@@ -42,35 +42,54 @@ export type EventTransitionConfigurationMap<
   TActions extends string
 > = {
   [E in EventUnionFromStateProtocol<TProtocol, TNode>['type']]: SingleOrArray<
-    EventTransitionConfiguration<TProtocol, TNode, TActions, E>
+    ActionTargetUnionConfig<TProtocol, TNode, E>[keyof ActionTargetUnionConfig<
+      TProtocol,
+      TNode,
+      E
+    >]
   >
+};
+
+export type AssignUnionUtility<
+  TProtocol extends StateProtocol<any, any>,
+  TNode extends keyof TProtocol['states'],
+  TEventType extends string
+> = {
+  [K in TransitionUnionFromStateProtocol<TProtocol, TNode>['to']]: AssignFunction<
+    ContextMapFromStateProtocol<TProtocol>[TNode],
+    Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: TEventType }>,
+    ContextMapFromStateProtocol<TProtocol>[K]
+  >
+};
+
+export type ActionTargetUnionConfig<
+  TProtocol extends StateProtocol<any, any>,
+  TNode extends keyof TProtocol['states'],
+  TEventType extends string
+> = {
+  [K in TransitionUnionFromStateProtocol<TProtocol, TNode>['to']]: {
+    actions: AssignFunction<
+      ContextMapFromStateProtocol<TProtocol>[TNode],
+      Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: TEventType }>,
+      ContextMapFromStateProtocol<TProtocol>[K]
+    >;
+
+    // extract target "to" value from event transitions config
+    target: K;
+    cond?: (
+      // current context
+      ctx: ContextMapFromStateProtocol<TProtocol>[TNode],
+      // extract full event given type
+      event: Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: TEventType }>
+    ) => boolean;
+  }
 };
 
 export type EventTransitionConfiguration<
   TProtocol extends StateProtocol<any, any>,
   TNode extends keyof TProtocol['states'],
-  TActions extends string,
   TEventType extends string
-> = {
-  actions: Array<
-    | AssignFunction<
-        // current context
-        ContextMapFromStateProtocol<TProtocol>[TNode],
-        // extract full event given type
-        Extract<EventUnionFromStateProtocol<TProtocol, TNode>, { type: TEventType }>,
-        // extract return context given event type and node
-        ContextMapFromStateProtocol<TProtocol>[Extract<
-          TransitionUnionFromStateProtocol<TProtocol, TNode>,
-          { event: { type: TEventType } }
-        >['to']]
-      >
-    | TActions
-  >;
-  // extract target "to" value from event transitions config
-  target: Extract<
-    TransitionUnionFromStateProtocol<TProtocol, TNode>,
-    { event: { type: TEventType } }
-  >['to'];
+> = ActionTargetUnionConfig<TProtocol, TNode, TEventType> & {
   cond?: (
     // current context
     ctx: ContextMapFromStateProtocol<TProtocol>[TNode],

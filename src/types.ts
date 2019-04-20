@@ -24,6 +24,7 @@ export interface NullEvent {
 }
 
 // I'm sorry Anders... this isn't your fault
+
 export type ContextMapFromStateProtocol<TStateSchema extends StateProtocol<any, any>> = {
   [K in keyof TStateSchema['states']]: TStateSchema['states'][K]['context']
 };

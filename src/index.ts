@@ -17,13 +17,13 @@ interface PedestrianTimerEvent {
 
 interface PedestrianProtocol {
   states: {
-    [PedestrianStates.WALK]: {
-      context: { value: 'RED.WALK' };
-      transitions: [{ to: PedestrianStates.WAIT; event: PedestrianTimerEvent }];
-    };
     [PedestrianStates.WAIT]: {
       context: { value: 'RED.WAIT' };
       transitions: [{ to: PedestrianStates.STOP; event: PedestrianTimerEvent }];
+    };
+    [PedestrianStates.WALK]: {
+      context: { value: 'RED.WALK' };
+      transitions: [{ to: PedestrianStates.WAIT; event: PedestrianTimerEvent }];
     };
     [PedestrianStates.STOP]: {
       context: { value: 'RED.STOP' };
@@ -41,32 +41,46 @@ enum LightStates {
 
 enum LightEventTypes {
   TIMER = 'TIMER',
+  POWER_OUTAGE = 'POWER_OUTAGE',
 }
 
 interface TimerEvent {
   type: LightEventTypes.TIMER;
 }
 
+interface PowerOutageEvent {
+  type: LightEventTypes.POWER_OUTAGE;
+}
+
 interface LightProtocol {
   states: {
     [LightStates.GREEN]: {
       context: { value: 'GREEN' };
-      transitions: [{ to: LightStates.YELLOW; event: TimerEvent }];
+      transitions: [
+        { to: LightStates.YELLOW; event: TimerEvent },
+        { to: LightStates.RED; event: PowerOutageEvent }
+      ];
     };
     [LightStates.YELLOW]: {
       context: { value: 'YELLOW' };
-      transitions: [{ to: LightStates.RED; event: TimerEvent }];
+      transitions: [
+        { to: LightStates.RED; event: TimerEvent },
+        { to: LightStates.RED; event: PowerOutageEvent }
+      ];
     };
     [LightStates.RED]: {
       context: { value: 'RED.WALK' };
-      transitions: [{ to: LightStates.GREEN; event: TimerEvent }];
+      transitions: [
+        { to: LightStates.GREEN; event: TimerEvent },
+        { to: LightStates.RED; event: PowerOutageEvent }
+      ];
       states: PedestrianProtocol;
     };
   };
 }
 
 // Light Configuration
-const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, 'hello'> = {
+const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, ''> = {
   initial: LightStates.RED,
   context: { value: 'RED.WALK' },
   states: {
@@ -78,7 +92,14 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, 'hello'> = {
             (_ctx, _event) => {
               return { value: 'YELLOW' };
             },
-            'hello',
+          ],
+        },
+        POWER_OUTAGE: {
+          target: LightStates.RED,
+          actions: [
+            (_ctx, _event) => {
+              return { value: 'RED.WALK' };
+            },
           ],
         },
       },
@@ -93,8 +114,17 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, 'hello'> = {
             },
           ],
         },
+        POWER_OUTAGE: {
+          target: LightStates.RED,
+          actions: [
+            (_ctx, _event) => {
+              return _ctx;
+            },
+          ],
+        },
       },
       states: {
+        initial: PedestrianStates.WALK,
         STOP: {
           on: {},
         },
@@ -134,6 +164,14 @@ const lightConfig: ProtocolConfig<LightProtocol, LightStates.RED, 'hello'> = {
             },
           ],
         },
+        POWER_OUTAGE: {
+          target: LightStates.RED,
+          actions: [
+            (_ctx, _event) => {
+              return { value: 'RED.WALK' };
+            },
+          ],
+        },
       },
     },
   },
@@ -145,13 +183,13 @@ const valid1 = lightMatch(LightStates.GREEN);
 const valid2 = lightMatch(LightStates.RED);
 const valid3 = lightMatch(LightStates.RED, PedestrianStates.WALK);
 
-const invalid1 = lightMatch('invalid');
-const invalid2 = lightMatch(LightStates.YELLOW, PedestrianStates.WAIT);
-const invalid3 = lightMatch(
-  LightStates.RED,
-  PedestrianStates.WAIT,
-  PedestrianStates.WALK
-);
+// const invalid1 = lightMatch('invalid');
+// const invalid2 = lightMatch(LightStates.YELLOW, PedestrianStates.WAIT);
+// const invalid3 = lightMatch(
+//   LightStates.RED,
+//   PedestrianStates.WAIT,
+//   PedestrianStates.WALK
+// );
 
 enum AuthStates {
   LOGGED_IN = 'LOGGED_IN',
@@ -302,3 +340,42 @@ const actionImpls: ActionImplementations<typeof authConfig> = {
     }
   },
 };
+
+/*
+const doorMachine = Machine(
+  {
+    id: 'door',
+    initial: 'closed',
+    context: {
+      level: 'admin',
+      alert: false // alert when intrusions happen
+    },
+    states: {
+      closed: {
+        initial: 'idle',
+        states: {
+          idle: {},
+          error: {}
+        },
+        on: {
+          SET_ADMIN: {
+            actions: assign({ level: 'admin' })
+          },
+          OPEN: [
+            // Transitions are tested one at a time.
+            // The first valid transition will be taken.
+            { target: 'opened', cond: 'isAdmin' },
+            { target: '.error', cond: 'shouldAlert' },
+            { target: '.idle' }
+          ]
+        }
+      },
+      opened: {
+        on: {
+          CLOSE: 'closed'
+        }
+      }
+    }
+  },
+);
+*/

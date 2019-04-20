@@ -60,8 +60,10 @@ export interface TransitionConfig<
       >['to'];
     }
   };
-  states?: TProtocol['states'][TNode]['states'] extends StateProtocol<any, any>
-    ? TransitionConfigMap<TProtocol['states'][TNode]['states'], TActions>
+  states?: TProtocol['states'][TNode]['states'] extends StateProtocol<any, infer States>
+    ? TransitionConfigMap<TProtocol['states'][TNode]['states'], TActions> & {
+        initial: keyof TProtocol['states'][TNode]['states']['states'];
+      }
     : never;
 }
 

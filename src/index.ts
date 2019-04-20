@@ -1,4 +1,11 @@
-import { ActionImplementations, matchFactory, ProtocolConfig } from './types';
+import {
+  ActionImplementations,
+  matchFactory,
+  ProtocolConfig,
+  TransitionUnionFromStateProtocol,
+  ContextMapFromStateProtocol,
+  Transition,
+} from './types';
 
 // Pedestrian Protocol
 enum PedestrianStates {
@@ -200,7 +207,10 @@ interface AuthProtocol {
   states: {
     [AuthStates.LOGGED_OUT]: {
       context: { user: null; error: null };
-      transitions: [{ to: AuthStates.LOADING; event: LoginEvent }];
+      transitions: [
+        { to: AuthStates.LOADING; event: LoginEvent },
+        { to: AuthStates.LOGGED_IN; event: LoginEvent }
+      ];
     };
     [AuthStates.LOGGED_IN]: {
       context: { user: { username: string }; error: null };
@@ -219,6 +229,11 @@ interface AuthProtocol {
     };
   };
 }
+export type B = TransitionUnionFromStateProtocol<AuthProtocol, AuthStates.LOGGED_OUT>;
+
+type C<T> = T extends Transition<any, any> ? T[] : never;
+
+type D = C<B>;
 
 enum EffectActions {
   TELEMETRY = 'TELEMETRY',
@@ -236,7 +251,7 @@ const authConfig: ProtocolConfig<AuthProtocol, AuthStates.LOGGED_OUT, EffectActi
       on: {
         LOGIN: [
           {
-            target: AuthStates.LOADING,
+            target: AuthStates.LOGGED_IN,
             actions: [
               (_ctx, _event) => {
                 return { error: null, user: null };

@@ -183,7 +183,6 @@ const valid1 = lightMatch(LightStates.GREEN);
 const valid2 = lightMatch(LightStates.RED);
 const valid3 = lightMatch(LightStates.RED, PedestrianStates.WALK);
 
-<<<<<<< HEAD
 // const invalid1 = lightMatch('invalid');
 // const invalid2 = lightMatch(LightStates.YELLOW, PedestrianStates.WAIT);
 // const invalid3 = lightMatch(
@@ -191,15 +190,6 @@ const valid3 = lightMatch(LightStates.RED, PedestrianStates.WALK);
 //   PedestrianStates.WAIT,
 //   PedestrianStates.WALK
 // );
-=======
-const invalid1 = lightMatch('invalid');
-const invalid2 = lightMatch(LightStates.YELLOW, PedestrianStates.WALK);
-const invalid3 = lightMatch(
-  LightStates.RED,
-  PedestrianStates.WAIT,
-  PedestrianStates.WALK
-);
->>>>>>> 63baf53c0712ac5c1a2cab9e9d2425b2a758b5d7
 
 enum AuthStates {
   LOGGED_IN = 'LOGGED_IN',

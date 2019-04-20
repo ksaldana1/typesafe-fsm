@@ -13,10 +13,12 @@ export interface StateNode<
   transitions: Array<Transition<TEvents, TAllStates>>;
   states?: StateProtocol<TEvents, any>;
 }
+
 export interface Transition<TEvents extends EventObject, TAllStates extends string> {
   to: TAllStates;
   event: TEvents;
 }
+
 // I'm sorry Anders... this isn't your fault
 export type ContextMapFromStateProtocol<TStateSchema extends StateProtocol<any, any>> = {
   [K in keyof TStateSchema['states']]: TStateSchema['states'][K]['context']

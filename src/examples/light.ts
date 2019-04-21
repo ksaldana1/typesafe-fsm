@@ -1,4 +1,4 @@
-import { ProtocolConfig } from '../types';
+import { ProtocolConfig, StateProtocol } from '../types';
 
 // Pedestrian Protocol
 interface PedestrianTimerEvent {
@@ -75,6 +75,9 @@ interface LightProtocol {
     };
   };
 }
+
+type EventFromProtocol<T> = T extends StateProtocol<infer R> ? R : never;
+type B = EventFromProtocol<LightProtocol>;
 
 // Light Configuration
 const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {

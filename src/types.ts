@@ -1,7 +1,11 @@
 import { EventObject, SingleOrArray } from 'xstate';
 
-export interface StateProtocol<TAllStates extends string, TEvents extends EventObject> {
-  states: { [K in TAllStates]: StateNode<TAllStates, TEvents> };
+// export interface StateProtocol<TAllStates extends string, TEvents extends EventObject> {
+//   states: { [K in TAllStates]: StateNode<TAllStates, TEvents> };
+// }
+
+export interface StateProtocol<T extends Record<string, StateNode<any, any>>> {
+  states: T;
 }
 
 export interface StateNode<
@@ -11,7 +15,7 @@ export interface StateNode<
 > {
   context: TContext;
   transitions: Array<Transition<TEvents, TAllStates>>;
-  states?: StateProtocol<any, any>;
+  states?: StateProtocol<any>;
 }
 
 export interface Transition<TEvents extends EventObject, TAllStates extends string> {
@@ -25,26 +29,26 @@ export interface NullEvent {
 
 // I'm sorry Anders... this isn't your fault
 
-export type ContextMapFromStateProtocol<TStateSchema extends StateProtocol<any, any>> = {
+export type ContextMapFromStateProtocol<TStateSchema extends StateProtocol<any>> = {
   [K in keyof TStateSchema['states']]: TStateSchema['states'][K]['context']
 };
 
 export type ContextUnionFromStateProtocol<
-  TStateSchema extends StateProtocol<any, any>
+  TStateSchema extends StateProtocol<any>
 > = TStateSchema['states'][keyof TStateSchema['states']]['context'];
 
 export type EventUnionFromStateProtocolNode<
-  T extends StateProtocol<any, any>,
+  T extends StateProtocol<any>,
   K extends keyof T['states']
 > = T['states'][K]['transitions'][number]['event'];
 
 export type TransitionUnionFromStateProtocolNode<
-  T extends StateProtocol<any, any>,
+  T extends StateProtocol<any>,
   K extends keyof T['states']
 > = T['states'][K]['transitions'][number];
 
 export type AddNullTransition<
-  TProtocol extends StateProtocol<any, any>,
+  TProtocol extends StateProtocol<any>,
   TNode extends keyof TProtocol['states']
 > = NullEvent extends Extract<
   EventUnionFromStateProtocolNode<TProtocol, TNode>,
@@ -53,7 +57,7 @@ export type AddNullTransition<
   ? ''
   : never;
 export interface TransitionConfig<
-  TProtocol extends StateProtocol<any, any>,
+  TProtocol extends StateProtocol<any>,
   TNode extends keyof TProtocol['states'],
   TActions extends string
 > {
@@ -91,7 +95,7 @@ export interface TransitionConfig<
       ) => boolean;
     }>
   };
-  states?: TProtocol['states'][TNode]['states'] extends StateProtocol<infer States, any>
+  states?: TProtocol['states'][TNode]['states'] extends StateProtocol<any>
     ? TransitionConfigMap<TProtocol['states'][TNode]['states'], TActions> & {
         initial?: keyof TProtocol['states'][TNode]['states']['states'];
       }
@@ -105,10 +109,9 @@ export interface TransitionConfig<
   ) => TProtocol['states'][TNode]['transitions'][number]['event'];
 }
 
-export type TransitionConfigMap<
-  T extends StateProtocol<any, any>,
-  TActions extends string
-> = { [K in keyof T['states']]: TransitionConfig<T, K, TActions> };
+export type TransitionConfigMap<T extends StateProtocol<any>, TActions extends string> = {
+  [K in keyof T['states']]: TransitionConfig<T, K, TActions>
+};
 
 export type AssignFunction<TContext, TEvent extends EventObject, TReturnContext> = (
   ctx: TContext,
@@ -116,7 +119,7 @@ export type AssignFunction<TContext, TEvent extends EventObject, TReturnContext>
 ) => TReturnContext;
 
 export interface ProtocolConfig<
-  T extends StateProtocol<any, any>,
+  T extends StateProtocol<any>,
   K extends keyof T['states'],
   TActions extends string
 > {
@@ -145,7 +148,7 @@ export type ActionImplementations<T> = T extends ProtocolConfig<
 export type Lookup<T, K> = K extends keyof T ? T[K] : never;
 
 // type-safe match factory
-export function matchFactory<T extends StateProtocol<any, any>>() {
+export function matchFactory<T extends StateProtocol<any>>() {
   function match<K extends keyof T['states']>(k: K): boolean;
   function match<
     K extends keyof T['states'],

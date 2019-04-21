@@ -27,7 +27,7 @@ interface NestedState {
   states: {
     JOG: {
       context: {};
-      transitions: [];
+      transitions: [{ to: 'SPRING'; event: { type: 'RECURSE' } }];
     };
     SPRINT: {
       context: {};
@@ -76,27 +76,22 @@ interface LightProtocol {
   };
 }
 
-type EventFromProtocol<T> = T extends StateProtocol<any>
+type EventsFromProtocol<T> = T extends StateProtocol<any>
   ? { [K in keyof T['states']]: EventFromNode<T['states'][K]> }[keyof T['states']]
   : never;
 
-type Infer<T> = T extends StateProtocol<infer R>
-  ? { [K in keyof R]: T['states'][K]['transitions'][number]['event'] }[keyof R]
+type EventFromNode<T> = T extends StateNode<any, infer Events>
+  ?
+      | Events
+      | {
+          [K in keyof Lookup<T['states'], 'states'>]: EventFromNode<
+            Lookup<Lookup<T['states'], 'states'>, K>
+          >
+        }[keyof Lookup<T['states'], 'states'>]
   : never;
 
-type EventFromNode<T> = T extends StateNode<any, infer Events> ? Events : never;
-type EventFromNestedNode<T> = T extends StateNode<any, any>
-  ? {
-      [K in keyof Lookup<T['states'], 'states'>]: Lookup<
-        Lookup<Lookup<Lookup<Lookup<T['states'], 'states'>, K>, 'transitions'>, number>,
-        'event'
-      >
-    }[keyof Lookup<T['states'], 'states'>]
-  : never;
+type Z = EventsFromProtocol<LightProtocol>;
 
-type D = Infer<LightProtocol>;
-
-type Z = EventFromNestedNode<LightProtocol['states']['RED']>;
 // Light Configuration
 const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
   initial: 'RED',

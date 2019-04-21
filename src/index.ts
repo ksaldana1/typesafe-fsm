@@ -132,7 +132,6 @@ const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
         },
       },
       states: {
-        initial: 'WALK',
         STOP: {
           on: {},
         },
@@ -362,42 +361,3 @@ const actionImpls: ActionImplementations<typeof authConfig> = {
     }
   },
 };
-
-/*
-const doorMachine = Machine(
-  {
-    id: 'door',
-    initial: 'closed',
-    context: {
-      level: 'admin',
-      alert: false // alert when intrusions happen
-    },
-    states: {
-      closed: {
-        initial: 'idle',
-        states: {
-          idle: {},
-          error: {}
-        },
-        on: {
-          SET_ADMIN: {
-            actions: assign({ level: 'admin' })
-          },
-          OPEN: [
-            // Transitions are tested one at a time.
-            // The first valid transition will be taken.
-            { target: 'opened', cond: 'isAdmin' },
-            { target: '.error', cond: 'shouldAlert' },
-            { target: '.idle' }
-          ]
-        }
-      },
-      opened: {
-        on: {
-          CLOSE: 'closed'
-        }
-      }
-    }
-  },
-);
-*/

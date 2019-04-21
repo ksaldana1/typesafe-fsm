@@ -91,7 +91,7 @@ export interface TransitionConfig<
       ) => boolean;
     }>
   };
-  states?: TProtocol['states'][TNode]['states'] extends StateProtocol<any, infer States>
+  states?: TProtocol['states'][TNode]['states'] extends StateProtocol<infer States, any>
     ? TransitionConfigMap<TProtocol['states'][TNode]['states'], TActions> & {
         initial?: keyof TProtocol['states'][TNode]['states']['states'];
       }

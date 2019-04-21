@@ -1,4 +1,4 @@
-import { ProtocolConfig, StateProtocol } from '../types';
+import { ProtocolConfig, StateProtocol, StateNode, Lookup } from '../types';
 
 // Pedestrian Protocol
 interface PedestrianTimerEvent {
@@ -76,9 +76,27 @@ interface LightProtocol {
   };
 }
 
-type EventFromProtocol<T> = T extends StateProtocol<infer R> ? R : never;
-type B = EventFromProtocol<LightProtocol>;
+type EventFromProtocol<T> = T extends StateProtocol<any>
+  ? { [K in keyof T['states']]: EventFromNode<T['states'][K]> }[keyof T['states']]
+  : never;
 
+type Infer<T> = T extends StateProtocol<infer R>
+  ? { [K in keyof R]: T['states'][K]['transitions'][number]['event'] }[keyof R]
+  : never;
+
+type EventFromNode<T> = T extends StateNode<any, infer Events> ? Events : never;
+type EventFromNestedNode<T> = T extends StateNode<any, any>
+  ? {
+      [K in keyof Lookup<T['states'], 'states'>]: Lookup<
+        Lookup<Lookup<Lookup<Lookup<T['states'], 'states'>, K>, 'transitions'>, number>,
+        'event'
+      >
+    }[keyof Lookup<T['states'], 'states'>]
+  : never;
+
+type D = Infer<LightProtocol>;
+
+type Z = EventFromNestedNode<LightProtocol['states']['RED']>;
 // Light Configuration
 const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
   initial: 'RED',

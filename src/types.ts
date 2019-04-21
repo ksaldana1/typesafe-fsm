@@ -4,7 +4,7 @@ import { EventObject, SingleOrArray } from 'xstate';
 //   states: { [K in TAllStates]: StateNode<TAllStates, TEvents> };
 // }
 
-export interface StateProtocol<T extends Record<string, StateNode<any, any>>> {
+export interface StateProtocol<T extends Record<any, StateNode<any, any>>> {
   states: T;
 }
 

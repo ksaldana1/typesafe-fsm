@@ -5,6 +5,7 @@ import {
   Lookup,
   EventUnionFromStateProtocolNode,
   TransitionUnionFromStateProtocolNode,
+  ContextMapFromStateProtocol,
 } from '../types';
 
 // Pedestrian Protocol
@@ -213,46 +214,36 @@ const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
 
 interface StateValue<
   TProtocol extends StateProtocol<any>,
-  TValue extends keyof TProtocol['states'],
-  TContext
+  TValue extends keyof TProtocol['states']
 > {
-  context: TContext;
+  context: ContextMapFromStateProtocol<TProtocol>[TValue];
   value: TValue;
-  transition: <T>(i: T) => T;
+  // prettier-ignore
+  transition: <E extends EventsFromValue<StateValue<TProtocol, TValue>>>(
+    e: E
+    // @ts-ignore Need to fix this constraint
+  ) => StateValue<TProtocol, EventToTransition<StateValue<TProtocol, TValue>, E>['to']>;
 }
-
-declare function transition<E extends EventsFromValue<T>>(
-  event: E
-): StateValue<
-  ProtocolFromValue<T>['protocol'],
-  ValueToState<ProtocolFromValue<T>['protocol'], EventToTransition<T, E>>['value'],
-  ValueToState<ProtocolFromValue<T>['protocol'], EventToTransition<T, E>>['context']
->;
 
 type Protocol<T> = T extends ProtocolConfig<infer P, any, any> ? P : never;
 
-function stateValueFromConfig<T extends ProtocolConfig<any, any, any>>(
+export function stateValueFromConfig<T extends ProtocolConfig<any, any, any>>(
   config: T
-): StateValue<Protocol<T>, T['initial'], T['context']> {
+): StateValue<Protocol<T>, T['initial']> {
   return {
     context: config.context,
     value: config.initial,
-  };
+  } as StateValue<Protocol<T>, T['initial']>;
 }
 
-type ProtocolFromValue<T> = T extends StateValue<
-  infer Protocol,
-  infer Value,
-  infer Context
->
+type ProtocolFromValue<T> = T extends StateValue<infer Protocol, infer Value>
   ? {
-      context: Context;
       value: Value;
       protocol: Protocol;
     }
   : never;
 
-type EventsFromValue<T> = T extends StateValue<infer Protocol, infer Value, any>
+type EventsFromValue<T> = T extends StateValue<infer Protocol, infer Value>
   ? EventUnionFromStateProtocolNode<Protocol, Value>
   : any;
 
@@ -260,16 +251,16 @@ type EventsFromValue<T> = T extends StateValue<infer Protocol, infer Value, any>
 // pluck the 'to' property from the transitions
 // new state values context and value are based on this 'to'
 
-type TransitionUnionFromStateValue<T extends StateValue<any, any, any>> =
+type TransitionUnionFromStateValue<T extends StateValue<any, any>> =
   // E extends EventsFromValue<ProtocolFromValue<T>>
   ProtocolFromValue<T>['protocol'][keyof ProtocolFromValue<
     T
   >['protocol']][ProtocolFromValue<T>['value']]['transitions'][number];
 
-type B = TransitionUnionFromStateValue<typeof b>;
+type B = EventToTransition<typeof initialState, TimerEvent>;
 
 type EventToTransition<
-  T extends StateValue<any, any, any>,
+  T extends StateValue<any, any>,
   E extends EventsFromValue<T>
 > = Extract<TransitionUnionFromStateValue<T>, { event: E }>;
 
@@ -278,21 +269,6 @@ type ValueToState<T extends StateProtocol<any>, K extends keyof T['states']> = {
   value: K;
 };
 
-declare function transition<
-  T extends StateValue<any, any, any>,
-  E extends EventsFromValue<T>
->(
-  state: T,
-  event: E
-): StateValue<
-  ProtocolFromValue<T>['protocol'],
-  ValueToState<ProtocolFromValue<T>['protocol'], EventToTransition<T, E>>['value'],
-  ValueToState<ProtocolFromValue<T>['protocol'], EventToTransition<T, E>>['context']
->;
-
-// I want a state value with the transitioned to Context & Value
-
 const initialState = stateValueFromConfig(lightConfig);
-type c = EventsFromValue<typeof initialState>;
-
-const newState = transition(initialState, { type: 'POWER_OUTAGE' });
+const greenState = initialState.transition({ type: 'TIMER' });
+const redState = greenState.transition({ type: 'POWER_OUTAGE' });

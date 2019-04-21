@@ -1,4 +1,5 @@
 import { ProtocolConfig, ActionImplementations } from '../types';
+import { stateValueFromConfig } from './light';
 
 interface LoginEvent {
   type: 'LOGIN';
@@ -161,3 +162,32 @@ const actionImpls: ActionImplementations<typeof authConfig> = {
     }
   },
 };
+
+const initialState = stateValueFromConfig(authConfig);
+const currentContext = initialState.context; // context is {error: null, user: null}
+const currentValue = initialState.value; // value is "LOGGED_OUT"
+
+const loadingState = initialState.transition({
+  type: 'LOGIN',
+  payload: { username: 'bob27', password: 'qwerty' },
+});
+const loadingContext = loadingState.context; // context is {error: null, user: null}
+const loadingValue = loadingState.value; // value is "LOADING"
+
+const logoutInvalidTransition = loadingState.transition({
+  type: 'LOGOUT', // ERROR: Type '"LOGOUT"' is not assignable to type '"LOGIN_SUCCESS" | "LOGIN_ERROR"'
+});
+
+const errorState = loadingState.transition({
+  type: 'LOGIN_ERROR',
+  payload: { error: 'ERROR' },
+});
+const errorContext = errorState.context; // context is {error: string, user: null}
+const errorValue = errorState.value; // value is ERROR
+
+const successState = loadingState.transition({
+  type: 'LOGIN_SUCCESS',
+  payload: { user: { username: 'bob' } },
+});
+const successContext = successState.context; // context is {error: null, user: {username: string}}
+const successValue = successState.value; // value is LOGGED_IN

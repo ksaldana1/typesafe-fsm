@@ -27,7 +27,7 @@ interface NestedState {
   states: {
     JOG: {
       context: {};
-      transitions: [{ to: 'SPRING'; event: { type: 'RECURSE' } }];
+      transitions: [];
     };
     SPRINT: {
       context: {};

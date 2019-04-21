@@ -1,6 +1,6 @@
 import { EventObject, SingleOrArray } from 'xstate';
 
-// export interface StateProtocol<TAllStates extends string, TEvents extends EventObject> {
+// export interface StateProtocol<TAllStates extends string, TEvents > {
 //   states: { [K in TAllStates]: StateNode<TAllStates, TEvents> };
 // }
 
@@ -8,17 +8,13 @@ export interface StateProtocol<T extends Record<any, StateNode<any, any>>> {
   states: T;
 }
 
-export interface StateNode<
-  TAllStates extends string,
-  TEvents extends EventObject,
-  TContext = any
-> {
+export interface StateNode<TAllStates extends string, TEvents, TContext = any> {
   context: TContext;
   transitions: Array<Transition<TEvents, TAllStates>>;
   states?: StateProtocol<any>;
 }
 
-export interface Transition<TEvents extends EventObject, TAllStates extends string> {
+export interface Transition<TEvents, TAllStates extends string> {
   to: TAllStates;
   event: TEvents;
 }
@@ -113,7 +109,7 @@ export type TransitionConfigMap<T extends StateProtocol<any>, TActions extends s
   [K in keyof T['states']]: TransitionConfig<T, K, TActions>
 };
 
-export type AssignFunction<TContext, TEvent extends EventObject, TReturnContext> = (
+export type AssignFunction<TContext, TEvent, TReturnContext> = (
   ctx: TContext,
   event: TEvent
 ) => TReturnContext;

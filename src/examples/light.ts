@@ -6,6 +6,8 @@ import {
   EventUnionFromStateProtocolNode,
   TransitionUnionFromStateProtocolNode,
   ContextMapFromStateProtocol,
+  Transition,
+  createStateFromConfig,
 } from '../types';
 
 // Pedestrian Protocol
@@ -17,11 +19,11 @@ interface PedestrianProtocol {
   states: {
     WAIT: {
       context: { value: 'RED.WAIT' };
-      transitions: [{ to: 'STOP'; event: PedestrianTimerEvent }];
+      transitions: [Transition<PedestrianTimerEvent, 'STOP'>];
     };
     WALK: {
       context: { value: 'RED.WALK' };
-      transitions: [{ to: 'WAIT'; event: PedestrianTimerEvent }];
+      transitions: [Transition<PedestrianTimerEvent, 'WAIT'>];
       states: NestedState;
     };
     STOP: {
@@ -39,7 +41,7 @@ interface NestedState {
     };
     SPRINT: {
       context: {};
-      transitions: [{ to: 'JOG'; event: { type: 'SLOW_DOWN' } }];
+      transitions: [Transition<{ type: 'SLOW_DOWN' }, 'JOG'>];
       states: HumanStatus;
     };
     DO_THE_WORM: {
@@ -53,11 +55,11 @@ interface HumanStatus {
   states: {
     DEAD: {
       context: {};
-      transitions: [{ to: 'ALIVE'; event: { type: 'RESURRECT' } }];
+      transitions: [Transition<{ type: 'RESURRECT' }, 'ALIVE'>];
     };
     ALIVE: {
       context: {};
-      transitions: [{ to: 'DEAD'; event: { to: 'DIE' } }];
+      transitions: [Transition<{ type: 'DIE' }, 'DEAD'>];
     };
   };
 }
@@ -76,23 +78,17 @@ interface LightProtocol {
     GREEN: {
       context: { value: 'GREEN' };
       transitions: [
-        { to: 'YELLOW'; event: TimerEvent },
-        { to: 'RED'; event: PowerOutageEvent }
+        Transition<TimerEvent, 'YELLOW'>,
+        Transition<PowerOutageEvent, 'RED'>
       ];
     };
     YELLOW: {
       context: { value: 'YELLOW' };
-      transitions: [
-        { to: 'RED'; event: TimerEvent },
-        { to: 'RED'; event: PowerOutageEvent }
-      ];
+      transitions: [Transition<TimerEvent, 'RED'>, Transition<PowerOutageEvent, 'RED'>];
     };
     RED: {
       context: { value: 'RED.WALK' };
-      transitions: [
-        { to: 'GREEN'; event: TimerEvent },
-        { to: 'RED'; event: PowerOutageEvent }
-      ];
+      transitions: [Transition<TimerEvent, 'GREEN'>, Transition<PowerOutageEvent, 'RED'>];
       states: PedestrianProtocol;
     };
   };
@@ -212,63 +208,8 @@ const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
   },
 };
 
-interface StateValue<
-  TProtocol extends StateProtocol<any>,
-  TValue extends keyof TProtocol['states']
-> {
-  context: ContextMapFromStateProtocol<TProtocol>[TValue];
-  value: TValue;
-  // prettier-ignore
-  transition: <E extends EventsFromValue<StateValue<TProtocol, TValue>>>(
-    e: E
-    // @ts-ignore Need to fix this constraint
-  ) => StateValue<TProtocol, EventToTransition<StateValue<TProtocol, TValue>, E>['to']>;
-}
-
-type Protocol<T> = T extends ProtocolConfig<infer P, any, any> ? P : never;
-
-export function stateValueFromConfig<T extends ProtocolConfig<any, any, any>>(
-  config: T
-): StateValue<Protocol<T>, T['initial']> {
-  return {
-    context: config.context,
-    value: config.initial,
-  } as StateValue<Protocol<T>, T['initial']>;
-}
-
-type ProtocolFromValue<T> = T extends StateValue<infer Protocol, infer Value>
-  ? {
-      value: Value;
-      protocol: Protocol;
-    }
-  : never;
-
-type EventsFromValue<T> = T extends StateValue<infer Protocol, infer Value>
-  ? EventUnionFromStateProtocolNode<Protocol, Value>
-  : any;
-
-// based off of E, I need to go pluck the appropriate transition
-// pluck the 'to' property from the transitions
-// new state values context and value are based on this 'to'
-
-type TransitionUnionFromStateValue<T extends StateValue<any, any>> =
-  // E extends EventsFromValue<ProtocolFromValue<T>>
-  ProtocolFromValue<T>['protocol'][keyof ProtocolFromValue<
-    T
-  >['protocol']][ProtocolFromValue<T>['value']]['transitions'][number];
-
-type B = EventToTransition<typeof initialState, TimerEvent>;
-
-type EventToTransition<
-  T extends StateValue<any, any>,
-  E extends EventsFromValue<T>
-> = Extract<TransitionUnionFromStateValue<T>, { event: E }>;
-
-type ValueToState<T extends StateProtocol<any>, K extends keyof T['states']> = {
-  context: T['states']['context'];
-  value: K;
-};
-
-const initialState = stateValueFromConfig(lightConfig);
+const initialState = createStateFromConfig(lightConfig);
 const greenState = initialState.transition({ type: 'TIMER' });
-const redState = greenState.transition({ type: 'POWER_OUTAGE' });
+const powerOutState = greenState.transition({ type: 'POWER_OUTAGE' });
+const powerOnState = powerOutState.transition({ type: 'TIMER' });
+const current = powerOnState.transition({ type: 'TIMER' });

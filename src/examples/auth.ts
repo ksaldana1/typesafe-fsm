@@ -1,5 +1,9 @@
-import { ProtocolConfig, ActionImplementations } from '../types';
-import { stateValueFromConfig } from './light';
+import {
+  ProtocolConfig,
+  ActionImplementations,
+  Transition,
+  createStateFromConfig,
+} from '../types';
 
 interface LoginEvent {
   type: 'LOGIN';
@@ -33,22 +37,22 @@ interface AuthProtocol {
   states: {
     LOGGED_OUT: {
       context: { user: null; error: null };
-      transitions: [{ to: 'LOADING'; event: LoginEvent }];
+      transitions: [Transition<LoginEvent, 'LOADING'>];
     };
     LOGGED_IN: {
       context: { user: { username: string }; error: null };
-      transitions: [{ to: 'LOGGED_OUT'; event: LogoutEvent }];
+      transitions: [Transition<LogoutEvent, 'LOGGED_OUT'>];
     };
     LOADING: {
       context: { user: null; error: null };
       transitions: [
-        { to: 'LOGGED_IN'; event: LoginSuccessEvent },
-        { to: 'ERROR'; event: LoginErrorEvent }
+        Transition<LoginSuccessEvent, 'LOGGED_IN'>,
+        Transition<LoginErrorEvent, 'ERROR'>
       ];
     };
     ERROR: {
       context: { user: null; error: string };
-      transitions: [{ to: 'LOADING'; event: LoginEvent }];
+      transitions: [Transition<LoginEvent, 'LOADING'>];
     };
   };
 }
@@ -163,7 +167,7 @@ const actionImpls: ActionImplementations<typeof authConfig> = {
   },
 };
 
-const initialState = stateValueFromConfig(authConfig);
+const initialState = createStateFromConfig(authConfig);
 const currentContext = initialState.context; // context is {error: null, user: null}
 const currentValue = initialState.value; // value is "LOGGED_OUT"
 

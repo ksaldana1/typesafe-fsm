@@ -6,6 +6,7 @@ import {
   EventUnionFromStateProtocolNode,
   AddNullTransition,
   Lookup,
+  StateProtocol,
 } from './types';
 
 // Pedestrian Protocol
@@ -85,7 +86,6 @@ interface LightProtocol {
     };
   };
 }
-type D = LightProtocol['states']['RED']['states']['states']['WALK']['states']['states'];
 
 // Light Configuration
 const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {

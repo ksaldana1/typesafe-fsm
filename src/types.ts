@@ -1,17 +1,17 @@
 import { EventObject, SingleOrArray } from 'xstate';
 
-export interface StateProtocol<TEvents extends EventObject, TAllStates extends string> {
-  states: { [K in TAllStates]: StateNode<TEvents, TAllStates> };
+export interface StateProtocol<TAllStates extends string, TEvents extends EventObject> {
+  states: { [K in TAllStates]: StateNode<TAllStates, TEvents> };
 }
 
 export interface StateNode<
-  TEvents extends EventObject,
   TAllStates extends string,
+  TEvents extends EventObject,
   TContext = any
 > {
   context: TContext;
   transitions: Array<Transition<TEvents, TAllStates>>;
-  states?: StateProtocol<TEvents, any>;
+  states?: StateProtocol<any, any>;
 }
 
 export interface Transition<TEvents extends EventObject, TAllStates extends string> {

@@ -1,4 +1,11 @@
-import { ProtocolConfig, StateProtocol, StateNode, Lookup } from '../types';
+import {
+  ProtocolConfig,
+  StateProtocol,
+  StateNode,
+  Lookup,
+  EventUnionFromStateProtocolNode,
+  TransitionUnionFromStateProtocolNode,
+} from '../types';
 
 // Pedestrian Protocol
 interface PedestrianTimerEvent {
@@ -31,11 +38,25 @@ interface NestedState {
     };
     SPRINT: {
       context: {};
-      transitions: [];
+      transitions: [{ to: 'JOG'; event: { type: 'SLOW_DOWN' } }];
+      states: HumanStatus;
     };
     DO_THE_WORM: {
       context: {};
       transitions: [];
+    };
+  };
+}
+
+interface HumanStatus {
+  states: {
+    DEAD: {
+      context: {};
+      transitions: [{ to: 'ALIVE'; event: { type: 'RESURRECT' } }];
+    };
+    ALIVE: {
+      context: {};
+      transitions: [{ to: 'DEAD'; event: { to: 'DIE' } }];
     };
   };
 }
@@ -189,3 +210,89 @@ const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
     },
   },
 };
+
+interface StateValue<
+  TProtocol extends StateProtocol<any>,
+  TValue extends keyof TProtocol['states'],
+  TContext
+> {
+  context: TContext;
+  value: TValue;
+  transition: <T>(i: T) => T;
+}
+
+declare function transition<E extends EventsFromValue<T>>(
+  event: E
+): StateValue<
+  ProtocolFromValue<T>['protocol'],
+  ValueToState<ProtocolFromValue<T>['protocol'], EventToTransition<T, E>>['value'],
+  ValueToState<ProtocolFromValue<T>['protocol'], EventToTransition<T, E>>['context']
+>;
+
+type Protocol<T> = T extends ProtocolConfig<infer P, any, any> ? P : never;
+
+function stateValueFromConfig<T extends ProtocolConfig<any, any, any>>(
+  config: T
+): StateValue<Protocol<T>, T['initial'], T['context']> {
+  return {
+    context: config.context,
+    value: config.initial,
+  };
+}
+
+type ProtocolFromValue<T> = T extends StateValue<
+  infer Protocol,
+  infer Value,
+  infer Context
+>
+  ? {
+      context: Context;
+      value: Value;
+      protocol: Protocol;
+    }
+  : never;
+
+type EventsFromValue<T> = T extends StateValue<infer Protocol, infer Value, any>
+  ? EventUnionFromStateProtocolNode<Protocol, Value>
+  : any;
+
+// based off of E, I need to go pluck the appropriate transition
+// pluck the 'to' property from the transitions
+// new state values context and value are based on this 'to'
+
+type TransitionUnionFromStateValue<T extends StateValue<any, any, any>> =
+  // E extends EventsFromValue<ProtocolFromValue<T>>
+  ProtocolFromValue<T>['protocol'][keyof ProtocolFromValue<
+    T
+  >['protocol']][ProtocolFromValue<T>['value']]['transitions'][number];
+
+type B = TransitionUnionFromStateValue<typeof b>;
+
+type EventToTransition<
+  T extends StateValue<any, any, any>,
+  E extends EventsFromValue<T>
+> = Extract<TransitionUnionFromStateValue<T>, { event: E }>;
+
+type ValueToState<T extends StateProtocol<any>, K extends keyof T['states']> = {
+  context: T['states']['context'];
+  value: K;
+};
+
+declare function transition<
+  T extends StateValue<any, any, any>,
+  E extends EventsFromValue<T>
+>(
+  state: T,
+  event: E
+): StateValue<
+  ProtocolFromValue<T>['protocol'],
+  ValueToState<ProtocolFromValue<T>['protocol'], EventToTransition<T, E>>['value'],
+  ValueToState<ProtocolFromValue<T>['protocol'], EventToTransition<T, E>>['context']
+>;
+
+// I want a state value with the transitioned to Context & Value
+
+const initialState = stateValueFromConfig(lightConfig);
+type c = EventsFromValue<typeof initialState>;
+
+const newState = transition(initialState, { type: 'POWER_OUTAGE' });

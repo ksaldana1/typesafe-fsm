@@ -120,7 +120,7 @@ export interface ProtocolConfig<
   TActions extends string
 > {
   initial: K;
-  context?: ContextMapFromStateProtocol<T>[K];
+  context: ContextMapFromStateProtocol<T>[K];
   states: TransitionConfigMap<T, TActions>;
 }
 

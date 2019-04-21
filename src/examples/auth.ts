@@ -1,8 +1,8 @@
 import {
-  ProtocolConfig,
   ActionImplementations,
-  Transition,
   createStateFromConfig,
+  ProtocolConfig,
+  Transition,
 } from '../types';
 
 interface LoginEvent {

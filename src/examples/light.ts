@@ -1,13 +1,10 @@
 import {
-  ProtocolConfig,
-  StateProtocol,
-  StateNode,
-  Lookup,
-  EventUnionFromStateProtocolNode,
-  TransitionUnionFromStateProtocolNode,
-  ContextMapFromStateProtocol,
-  Transition,
   createStateFromConfig,
+  Lookup,
+  ProtocolConfig,
+  StateNode,
+  StateProtocol,
+  Transition,
 } from '../types';
 
 // Pedestrian Protocol

@@ -1,13 +1,4 @@
-import {
-  ActionImplementations,
-  matchFactory,
-  ProtocolConfig,
-  NullEvent,
-  EventUnionFromStateProtocolNode,
-  AddNullTransition,
-  Lookup,
-  StateProtocol,
-} from '../types';
+import { ProtocolConfig } from '../types';
 
 // Pedestrian Protocol
 interface PedestrianTimerEvent {
@@ -50,7 +41,6 @@ interface NestedState {
 }
 
 // Light Protocol
-
 interface TimerEvent {
   type: 'TIMER';
 }

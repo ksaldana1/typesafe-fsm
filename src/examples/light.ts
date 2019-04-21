@@ -1,4 +1,14 @@
-import { ProtocolConfig } from '../types';
+import {
+  ProtocolConfig,
+  StateProtocol,
+  StateNode,
+  Lookup,
+  EventUnionFromStateProtocolNode,
+  TransitionUnionFromStateProtocolNode,
+  ContextMapFromStateProtocol,
+  Transition,
+  createStateFromConfig,
+} from '../types';
 
 // Pedestrian Protocol
 interface PedestrianTimerEvent {
@@ -9,11 +19,11 @@ interface PedestrianProtocol {
   states: {
     WAIT: {
       context: { value: 'RED.WAIT' };
-      transitions: [{ to: 'STOP'; event: PedestrianTimerEvent }];
+      transitions: [Transition<PedestrianTimerEvent, 'STOP'>];
     };
     WALK: {
       context: { value: 'RED.WALK' };
-      transitions: [{ to: 'WAIT'; event: PedestrianTimerEvent }];
+      transitions: [Transition<PedestrianTimerEvent, 'WAIT'>];
       states: NestedState;
     };
     STOP: {
@@ -31,11 +41,25 @@ interface NestedState {
     };
     SPRINT: {
       context: {};
-      transitions: [];
+      transitions: [Transition<{ type: 'SLOW_DOWN' }, 'JOG'>];
+      states: HumanStatus;
     };
     DO_THE_WORM: {
       context: {};
       transitions: [];
+    };
+  };
+}
+
+interface HumanStatus {
+  states: {
+    DEAD: {
+      context: {};
+      transitions: [Transition<{ type: 'RESURRECT' }, 'ALIVE'>];
+    };
+    ALIVE: {
+      context: {};
+      transitions: [Transition<{ type: 'DIE' }, 'DEAD'>];
     };
   };
 }
@@ -54,27 +78,37 @@ interface LightProtocol {
     GREEN: {
       context: { value: 'GREEN' };
       transitions: [
-        { to: 'YELLOW'; event: TimerEvent },
-        { to: 'RED'; event: PowerOutageEvent }
+        Transition<TimerEvent, 'YELLOW'>,
+        Transition<PowerOutageEvent, 'RED'>
       ];
     };
     YELLOW: {
       context: { value: 'YELLOW' };
-      transitions: [
-        { to: 'RED'; event: TimerEvent },
-        { to: 'RED'; event: PowerOutageEvent }
-      ];
+      transitions: [Transition<TimerEvent, 'RED'>, Transition<PowerOutageEvent, 'RED'>];
     };
     RED: {
       context: { value: 'RED.WALK' };
-      transitions: [
-        { to: 'GREEN'; event: TimerEvent },
-        { to: 'RED'; event: PowerOutageEvent }
-      ];
+      transitions: [Transition<TimerEvent, 'GREEN'>, Transition<PowerOutageEvent, 'RED'>];
       states: PedestrianProtocol;
     };
   };
 }
+
+type EventsFromProtocol<T> = T extends StateProtocol<any>
+  ? { [K in keyof T['states']]: EventFromNode<T['states'][K]> }[keyof T['states']]
+  : never;
+
+type EventFromNode<T> = T extends StateNode<any, infer Events>
+  ?
+      | Events
+      | {
+          [K in keyof Lookup<T['states'], 'states'>]: EventFromNode<
+            Lookup<Lookup<T['states'], 'states'>, K>
+          >
+        }[keyof Lookup<T['states'], 'states'>]
+  : never;
+
+type Z = EventsFromProtocol<LightProtocol>;
 
 // Light Configuration
 const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
@@ -173,3 +207,9 @@ const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
     },
   },
 };
+
+const initialState = createStateFromConfig(lightConfig);
+const greenState = initialState.transition({ type: 'TIMER' });
+const powerOutState = greenState.transition({ type: 'POWER_OUTAGE' });
+const powerOnState = powerOutState.transition({ type: 'TIMER' });
+const current = powerOnState.transition({ type: 'TIMER' });

@@ -1,11 +1,4 @@
-import {
-  createStateFromConfig,
-  Lookup,
-  ProtocolConfig,
-  StateNode,
-  StateProtocol,
-  Transition,
-} from '../types';
+import { Lookup, ProtocolConfig, StateNode, StateProtocol, Transition } from '../types';
 
 // Pedestrian Protocol
 interface PedestrianTimerEvent {
@@ -76,6 +69,7 @@ interface LightProtocol {
       context: { value: 'GREEN' };
       transitions: [
         Transition<TimerEvent, 'YELLOW'>,
+        Transition<TimerEvent, 'RED'>,
         Transition<PowerOutageEvent, 'RED'>
       ];
     };
@@ -105,8 +99,6 @@ type EventFromNode<T> = T extends StateNode<any, infer Events>
         }[keyof Lookup<T['states'], 'states'>]
   : never;
 
-type Z = EventsFromProtocol<LightProtocol>;
-
 // Light Configuration
 const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
   initial: 'RED',
@@ -114,21 +106,25 @@ const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
   states: {
     GREEN: {
       on: {
-        TIMER: {
-          target: 'YELLOW',
-          actions: [
-            (_ctx, _event) => {
+        TIMER: [
+          {
+            target: 'YELLOW',
+            actions: (_ctx, _event) => {
               return { value: 'YELLOW' };
             },
-          ],
-        },
-        POWER_OUTAGE: {
-          target: 'RED',
-          actions: [
-            (_ctx, _event) => {
+          },
+          {
+            target: 'RED',
+            actions: (_ctx, _event) => {
               return { value: 'RED.WALK' };
             },
-          ],
+          },
+        ],
+        POWER_OUTAGE: {
+          target: 'RED',
+          actions: (_ctx, _event) => {
+            return { value: 'RED.WALK' };
+          },
         },
       },
     },
@@ -204,9 +200,3 @@ const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
     },
   },
 };
-
-const initialState = createStateFromConfig(lightConfig);
-const greenState = initialState.transition({ type: 'TIMER' });
-const powerOutState = greenState.transition({ type: 'POWER_OUTAGE' });
-const powerOnState = powerOutState.transition({ type: 'TIMER' });
-const current = powerOnState.transition({ type: 'TIMER' });

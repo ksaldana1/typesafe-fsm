@@ -50,25 +50,19 @@ export type OnTransitionConfig<
   TNode extends keyof TProtocol['states'],
   TEvent,
   TActions extends string
-> = SingleOrArray<{
-  actions: SingleOrArray<
-    | AssignFunction<
-        ContextMapFromStateProtocol<TProtocol>[TNode],
-        Extract<
-          EventUnionFromStateProtocolNode<TProtocol, TNode>,
-          { type: '' extends TEvent ? NullEvent['type'] : TEvent }
-        >,
-        ContextMapFromStateProtocol<TProtocol>[Extract<
-          TransitionUnionFromStateProtocolNode<TProtocol, TNode>,
-          { event: { type: '' extends TEvent ? NullEvent['type'] : TEvent } }
-        >['to']]
-      >
-    | TActions
-  >;
-  target: Extract<
-    TransitionUnionFromStateProtocolNode<TProtocol, TNode>,
-    { event: { type: '' extends TEvent ? NullEvent['type'] : TEvent } }
-  >['to'];
+> = SingleOrArray<TargetConfig<TProtocol, TNode, TEvent, TActions>>;
+
+export type TargetConfig<
+  TProtocol extends StateProtocol<any>,
+  TNode extends keyof TProtocol['states'],
+  TEvent,
+  TActions extends string
+> = TargetActions<TProtocol, TNode, TEvent, TActions>[keyof TargetActions<
+  TProtocol,
+  TNode,
+  TEvent,
+  TActions
+>] & {
   cond?: (
     ctx: ContextMapFromStateProtocol<TProtocol>[TNode],
     event: Extract<
@@ -76,7 +70,48 @@ export type OnTransitionConfig<
       { type: '' extends TEvent ? NullEvent['type'] : TEvent }
     >
   ) => boolean;
-}>;
+};
+
+export type TargetActions<
+  TProtocol extends StateProtocol<any>,
+  TNode extends keyof TProtocol['states'],
+  TEvent,
+  TActions extends string
+> = {
+  [K in Extract<
+    TransitionUnionFromStateProtocolNode<TProtocol, TNode>,
+    { event: { type: TEvent } }
+  >['to']]: {
+    actions: SingleOrArray<
+      | AssignFunction<
+          ContextMapFromStateProtocol<TProtocol>[TNode],
+          Extract<
+            EventUnionFromStateProtocolNode<TProtocol, TNode>,
+            { type: '' extends TEvent ? NullEvent['type'] : TEvent }
+          >,
+          ContextMapFromStateProtocol<TProtocol>[K]
+        >
+      | TActions
+    >;
+    target: K;
+  }
+};
+
+export type AssignUnion<
+  TProtocol extends StateProtocol<any>,
+  TNode extends keyof TProtocol['states'],
+  TEvent
+> = AssignFunction<
+  ContextMapFromStateProtocol<TProtocol>[TNode],
+  Extract<
+    EventUnionFromStateProtocolNode<TProtocol, TNode>,
+    { type: '' extends TEvent ? NullEvent['type'] : TEvent }
+  >,
+  ContextMapFromStateProtocol<TProtocol>[Extract<
+    TransitionUnionFromStateProtocolNode<TProtocol, TNode>,
+    { event: { type: '' extends TEvent ? NullEvent['type'] : TEvent } }
+  >['to']]
+>;
 
 export type TransitionConfigMap<T extends StateProtocol<any>, TActions extends string> = {
   [K in keyof T['states']]: TransitionConfig<T, K, TActions>

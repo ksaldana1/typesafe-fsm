@@ -5,6 +5,9 @@ import {
   StateNode,
   StateProtocol,
   Transition,
+  AssignUnion,
+  EventUnionFromStateProtocolNode,
+  TransitionUnionFromStateProtocolNode,
 } from '../types';
 
 // Pedestrian Protocol
@@ -116,14 +119,24 @@ const lightConfig: ProtocolConfig<LightProtocol, 'RED', ''> = {
   states: {
     GREEN: {
       on: {
-        TIMER: {
-          target: 'YELLOW',
-          actions: [
-            (_ctx, _event) => {
-              return { value: 'YELLOW' };
-            },
-          ],
-        },
+        TIMER: [
+          {
+            target: 'YELLOW',
+            actions: [
+              (_ctx, _event) => {
+                return { value: 'YELLOW' };
+              },
+            ],
+          },
+          {
+            target: 'YELLOW',
+            actions: [
+              (_ctx, _event) => {
+                return { value: 'RED.WALK' };
+              },
+            ],
+          },
+        ],
         POWER_OUTAGE: {
           target: 'RED',
           actions: [

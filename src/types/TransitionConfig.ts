@@ -12,40 +12,7 @@ export interface TransitionConfig<
   TNode extends keyof TProtocol['states'],
   TActions extends string
 > {
-  on?: {
-    [E in
-      | Exclude<
-          EventUnionFromStateProtocolNode<TProtocol, TNode>['type'],
-          NullEvent['type']
-        >
-      | AddNullTransition<TProtocol, TNode>]: SingleOrArray<{
-      actions: SingleOrArray<
-        | AssignFunction<
-            ContextMapFromStateProtocol<TProtocol>[TNode],
-            Extract<
-              EventUnionFromStateProtocolNode<TProtocol, TNode>,
-              { type: '' extends E ? NullEvent['type'] : E }
-            >,
-            ContextMapFromStateProtocol<TProtocol>[Extract<
-              TransitionUnionFromStateProtocolNode<TProtocol, TNode>,
-              { event: { type: '' extends E ? NullEvent['type'] : E } }
-            >['to']]
-          >
-        | TActions
-      >;
-      target: Extract<
-        TransitionUnionFromStateProtocolNode<TProtocol, TNode>,
-        { event: { type: '' extends E ? NullEvent['type'] : E } }
-      >['to'];
-      cond?: (
-        ctx: ContextMapFromStateProtocol<TProtocol>[TNode],
-        event: Extract<
-          EventUnionFromStateProtocolNode<TProtocol, TNode>,
-          { type: '' extends E ? NullEvent['type'] : E }
-        >
-      ) => boolean;
-    }>
-  };
+  on?: OnTransitionConfigMap<TProtocol, TNode, TActions>;
   states?: TProtocol['states'][TNode]['states'] extends StateProtocol<any>
     ? TransitionConfigMap<TProtocol['states'][TNode]['states'], TActions> & {
         initial?: keyof TProtocol['states'][TNode]['states']['states'];
@@ -59,6 +26,57 @@ export interface TransitionConfig<
     >['event']
   ) => Observable<TProtocol['states'][TNode]['transitions'][number]['event']>;
 }
+
+export type OnTransitionConfigMap<
+  TProtocol extends StateProtocol<any>,
+  TNode extends keyof TProtocol['states'],
+  TActions extends string
+> = {
+  [E in
+    | Exclude<
+        EventUnionFromStateProtocolNode<TProtocol, TNode>['type'],
+        NullEvent['type']
+      >
+    | AddNullTransition<TProtocol, TNode>]: OnTransitionConfig<
+    TProtocol,
+    TNode,
+    E,
+    TActions
+  >
+};
+
+export type OnTransitionConfig<
+  TProtocol extends StateProtocol<any>,
+  TNode extends keyof TProtocol['states'],
+  TEvent,
+  TActions extends string
+> = SingleOrArray<{
+  actions: SingleOrArray<
+    | AssignFunction<
+        ContextMapFromStateProtocol<TProtocol>[TNode],
+        Extract<
+          EventUnionFromStateProtocolNode<TProtocol, TNode>,
+          { type: '' extends TEvent ? NullEvent['type'] : TEvent }
+        >,
+        ContextMapFromStateProtocol<TProtocol>[Extract<
+          TransitionUnionFromStateProtocolNode<TProtocol, TNode>,
+          { event: { type: '' extends TEvent ? NullEvent['type'] : TEvent } }
+        >['to']]
+      >
+    | TActions
+  >;
+  target: Extract<
+    TransitionUnionFromStateProtocolNode<TProtocol, TNode>,
+    { event: { type: '' extends TEvent ? NullEvent['type'] : TEvent } }
+  >['to'];
+  cond?: (
+    ctx: ContextMapFromStateProtocol<TProtocol>[TNode],
+    event: Extract<
+      EventUnionFromStateProtocolNode<TProtocol, TNode>,
+      { type: '' extends TEvent ? NullEvent['type'] : TEvent }
+    >
+  ) => boolean;
+}>;
 
 export type TransitionConfigMap<T extends StateProtocol<any>, TActions extends string> = {
   [K in keyof T['states']]: TransitionConfig<T, K, TActions>

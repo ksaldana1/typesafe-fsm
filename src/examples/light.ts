@@ -76,6 +76,8 @@ interface LightProtocol {
       context: { value: 'GREEN' };
       transitions: [
         Transition<TimerEvent, 'YELLOW'>,
+        Transition<TimerEvent, 'RED'>,
+
         Transition<PowerOutageEvent, 'RED'>
       ];
     };

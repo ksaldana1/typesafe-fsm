@@ -34,7 +34,7 @@ interface LoginErrorEvent {
   };
 }
 
-interface AuthProtocol {
+export interface AuthProtocol {
   states: {
     LOGGED_OUT: {
       context: { user: null; error: null };
@@ -151,22 +151,22 @@ const authConfig: ProtocolConfig<AuthProtocol, 'LOGGED_OUT', EffectActions> = {
   },
 };
 
-const actionImpls: ActionImplementations<typeof authConfig> = {
-  TELEMETRY: (_ctx, event) => {
-    if (event.type === 'LOGIN') {
-      // event payload correctly narrowed
-      const { username, password } = event.payload;
-    }
-    if (_ctx.user && _ctx.user.username) {
-      const e = event.type;
-    }
-  },
-  NOTIFY_LOGGED_IN: (_ctx, event) => {
-    if (event.type === 'LOGIN_SUCCESS') {
-      console.log(event.payload.user);
-    }
-  },
-};
+// const actionImpls: ActionImplementations<typeof authConfig> = {
+//   TELEMETRY: (_ctx, event) => {
+//     if (event.type === 'LOGIN') {
+//       // event payload correctly narrowed
+//       const { username, password } = event.payload;
+//     }
+//     if (_ctx.user && _ctx.user.username) {
+//       const e = event.type;
+//     }
+//   },
+//   NOTIFY_LOGGED_IN: (_ctx, event) => {
+//     if (event.type === 'LOGIN_SUCCESS') {
+//       console.log(event.payload.user);
+//     }
+//   },
+// };
 
 const initialState = createStateFromConfig(authConfig);
 const currentContext = initialState.context; // context is {error: null, user: null}
@@ -182,9 +182,9 @@ const loadingState = initialState.transition({
 const loadingContext = loadingState.context; // context is {error: null, user: null}
 const loadingValue = loadingState.value; // value is "LOADING"
 
-const logoutInvalidTransition = loadingState.transition({
-  type: 'LOGOUT', // ERROR: Type '"LOGOUT"' is not assignable to type '"LOGIN_SUCCESS" | "LOGIN_ERROR"'
-});
+// const logoutInvalidTransition = loadingState.transition({
+//   type: 'LOGOUT', // ERROR: Type '"LOGOUT"' is not assignable to type '"LOGIN_SUCCESS" | "LOGIN_ERROR"'
+// });
 
 const errorState = loadingState.transition({
   type: 'LOGIN_ERROR',

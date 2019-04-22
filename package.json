@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "dtslint types"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dtslint": "^0.7.0",
     "rxjs": "^6.4.0",
     "typescript": "^3.4.4",
     "xstate": "^4.5.0"

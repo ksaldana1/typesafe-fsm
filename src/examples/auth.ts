@@ -4,6 +4,7 @@ import {
   ProtocolConfig,
   Transition,
 } from '../types';
+import { from, of } from 'rxjs';
 
 interface LoginEvent {
   type: 'LOGIN';
@@ -104,24 +105,24 @@ const authConfig: ProtocolConfig<AuthProtocol, 'LOGGED_OUT', EffectActions> = {
           ],
         },
       },
-      invoke: (_ctx, _event) => {
-        const seed = Math.random();
-        return seed > 0.5
-          ? {
-              type: 'LOGIN_SUCCESS',
-              payload: {
-                user: {
-                  username: 'bob27',
+      invoke: (_ctx, event) =>
+        of(
+          Math.random() > 0.5
+            ? {
+                type: 'LOGIN_SUCCESS',
+                payload: {
+                  user: {
+                    username: event.payload.username,
+                  },
                 },
-              },
-            }
-          : {
-              type: 'LOGIN_ERROR',
-              payload: {
-                error: 'LOGIN_ERROR',
-              },
-            };
-      },
+              }
+            : {
+                type: 'LOGIN_ERROR',
+                payload: {
+                  error: 'LOGIN_ERROR',
+                },
+              }
+        ),
     },
     ERROR: {
       on: {
@@ -173,7 +174,10 @@ const currentValue = initialState.value; // value is "LOGGED_OUT"
 
 const loadingState = initialState.transition({
   type: 'LOGIN',
-  payload: { username: 'bob27', password: 'qwerty' },
+  payload: {
+    username: 'bob',
+    password: '12345',
+  },
 });
 const loadingContext = loadingState.context; // context is {error: null, user: null}
 const loadingValue = loadingState.value; // value is "LOADING"

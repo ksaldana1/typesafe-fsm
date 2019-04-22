@@ -1,10 +1,10 @@
+import { of } from 'rxjs';
 import {
   ActionImplementations,
   createStateFromConfig,
   ProtocolConfig,
   Transition,
 } from '../types';
-import { from, of } from 'rxjs';
 
 interface LoginEvent {
   type: 'LOGIN';

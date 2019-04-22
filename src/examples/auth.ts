@@ -4,6 +4,9 @@ import {
   createStateFromConfig,
   ProtocolConfig,
   Transition,
+  ContextMapFromStateProtocol,
+  TransitionUnionFromStateProtocolNode,
+  UnionToTuple,
 } from '../types';
 
 interface LoginEvent {
@@ -168,9 +171,14 @@ const actionImpls: ActionImplementations<typeof authConfig> = {
   },
 };
 
+// type B = UnionToTuple<
+//   TransitionUnionFromStateProtocolNode<AuthProtocol, 'LOADING'>['event']['type']
+// >;
+
 const initialState = createStateFromConfig(authConfig);
 const currentContext = initialState.context; // context is {error: null, user: null}
 const currentValue = initialState.value; // value is "LOGGED_OUT"
+const b = initialState.nextEvents;
 
 const loadingState = initialState.transition({
   type: 'LOGIN',
@@ -181,7 +189,7 @@ const loadingState = initialState.transition({
 });
 const loadingContext = loadingState.context; // context is {error: null, user: null}
 const loadingValue = loadingState.value; // value is "LOADING"
-
+const l = loadingState.nextEvents;
 const logoutInvalidTransition = loadingState.transition({
   type: 'LOGOUT', // ERROR: Type '"LOGOUT"' is not assignable to type '"LOGIN_SUCCESS" | "LOGIN_ERROR"'
 });
@@ -192,6 +200,7 @@ const errorState = loadingState.transition({
 });
 const errorContext = errorState.context; // context is {error: string, user: null}
 const errorValue = errorState.value; // value is ERROR
+const errorNextEvents = errorState.nextEvents;
 
 const successState = loadingState.transition({
   type: 'LOGIN_SUCCESS',

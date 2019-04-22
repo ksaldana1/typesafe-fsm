@@ -4,7 +4,9 @@ import {
   StateProtocol,
   Transition,
   ContextMapFromStateProtocol,
+  TransitionUnionFromStateProtocolNode,
 } from './StateProtocol';
+import { UnionToTuple } from './utils';
 
 export interface StateValue<
   TProtocol extends StateProtocol<any>,
@@ -17,6 +19,9 @@ export interface StateValue<
   ) => StateValue<
     TProtocol,
     ExtractTo<EventToTransition<StateValue<TProtocol, TValue>, E>>
+  >;
+  nextEvents: UnionToTuple<
+    TransitionUnionFromStateProtocolNode<TProtocol, TValue>['event']['type']
   >;
 }
 
@@ -59,10 +64,5 @@ type EventToTransition<
   T extends StateValue<any, any>,
   E extends EventsFromValue<T>
 > = Extract<TransitionUnionFromStateValue<T>, { event: E }>;
-
-type ValueToState<T extends StateProtocol<any>, K extends keyof T['states']> = {
-  context: T['states']['context'];
-  value: K;
-};
 
 type ExtractTo<T> = T extends Transition<any, infer To> ? To : never;

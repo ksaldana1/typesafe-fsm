@@ -5,6 +5,7 @@ import {
   TransitionUnionFromStateProtocolNode,
 } from './StateProtocol';
 import { NullEvent, SingleOrArray } from './utils';
+import { Observable } from 'rxjs';
 
 export interface TransitionConfig<
   TProtocol extends StateProtocol<any>,
@@ -18,7 +19,7 @@ export interface TransitionConfig<
           NullEvent['type']
         >
       | AddNullTransition<TProtocol, TNode>]: SingleOrArray<{
-      actions: Array<
+      actions: SingleOrArray<
         | AssignFunction<
             ContextMapFromStateProtocol<TProtocol>[TNode],
             Extract<
@@ -55,8 +56,8 @@ export interface TransitionConfig<
     event: Extract<
       TransitionUnionFromStateProtocolNode<TProtocol, keyof TProtocol['states']>,
       { to: TNode }
-    >
-  ) => TProtocol['states'][TNode]['transitions'][number]['event'];
+    >['event']
+  ) => Observable<TProtocol['states'][TNode]['transitions'][number]['event']>;
 }
 
 export type TransitionConfigMap<T extends StateProtocol<any>, TActions extends string> = {

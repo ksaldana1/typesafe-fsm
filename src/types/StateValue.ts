@@ -38,9 +38,12 @@ type ProtocolFromValue<T> = T extends StateValue<infer Protocol, infer Value>
     }
   : never;
 
-type EventsFromValue<T> = T extends StateValue<infer Protocol, infer Value>
+type EventsFromValue<T extends StateValue<any, any>> = T extends StateValue<
+  infer Protocol,
+  infer Value
+>
   ? EventUnionFromStateProtocolNode<Protocol, Value>
-  : any;
+  : never;
 
 // based off of E, I need to go pluck the appropriate transition
 // pluck the 'to' property from the transitions
